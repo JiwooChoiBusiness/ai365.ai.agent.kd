@@ -270,6 +270,10 @@ input[type=range]{accent-color:var(--orange)}
 /* ── 카탈로그 레벨 그룹 ── */
 .lvgroup{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .lvgroup-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 2px 0}
+.lvgroup-h.tgl{cursor:pointer;user-select:none;padding:2px 1px}
+.lvchev{color:var(--t3);flex-shrink:0;transition:transform .15s}
+.lvgroup:not(.closed) .lvchev{transform:rotate(90deg)}
+.lvgroup.closed>.catcard{display:none}
 .lvgroup-h .lvd{font-size:11.5px;color:var(--t3)}
 .lvgroup-h .lvcnt{margin-left:auto;font-size:10.5px;font-weight:750;color:var(--t2);background:#EFF1F5;border-radius:20px;padding:1.5px 8px;font-variant-numeric:tabular-nums}
 .catcard{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface)}
@@ -305,7 +309,10 @@ input[type=range]{accent-color:var(--orange)}
 .modal-h>svg{color:var(--navy);flex-shrink:0}
 .modal-x{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--t3);padding:6px;border-radius:9px;display:grid;place-items:center;transition:background .13s,color .13s}
 .modal-x:hover{background:#F1F3F7;color:var(--text)}
-.modal-body{padding:18px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+.modal-body{padding:18px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain;min-height:0;flex:1 1 auto}
+/* 설정 모달: 내용 길이와 무관하게 항상 같은 높이 — 본문이 밀려나는 것이 물리적으로 불가능 */
+.modal.settings{height:min(88vh,900px)}
+@media (max-height:560px){.modal.settings{height:auto}}
 .modal-f{display:flex;align-items:center;gap:9px;padding:14px 20px;border-top:1px solid var(--line);justify-content:flex-end;background:#FBFCFD;border-radius:0 0 20px 20px}
 .modal-f .note{font-size:11.5px;color:var(--t3);margin-right:auto}
 .mtabs{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
@@ -1716,7 +1723,7 @@ function renderModal(){
   let body;
   try{body=mTab==="policy"?policyHTML():mTab==="sources"?sourcesHTML():mTab==="lic"?licRulesHTML():mTab==="conn"?connHTML():routingHTML();}
   catch(e){body='<div class="warnbox">'+ic("alert-triangle",14)+' 이 탭을 그리는 중 오류가 발생했습니다 — 아래 내용을 전달해주세요.<br><span style="font-family:ui-monospace,Consolas,monospace;font-size:11px;word-break:break-all">'+esc(String(e&&e.stack||e))+'</span></div>';}
-  r.innerHTML='<div class="mbg" onclick="if(event.target===this)closeSettings()"><div class="modal" role="dialog" aria-modal="true">'+
+  r.innerHTML='<div class="mbg" onclick="if(event.target===this)closeSettings()"><div class="modal settings" role="dialog" aria-modal="true">'+
    '<div class="modal-h">'+ic("settings",16)+'에이전트 설정 <span class="hint-back">변경은 저장 즉시 파이프라인에 반영</span><button class="modal-x" onclick="closeSettings()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
    '<div class="mtabs">'+
     '<button class="mtab'+(mTab==="policy"?" active":"")+'" onclick="switchMTab(\'policy\')">'+ic("scale",13)+'정책 (용도·레벨·대기)</button>'+
@@ -1812,7 +1819,7 @@ function licRulesHTML(){
    '</div>'+
    [1,2,3,4,5].map(lv=>{
     const items=CATALOG.filter(c=>c.lv===lv);if(!items.length)return"";
-    return '<div class="setgrp lvgroup"><div class="lvgroup-h">'+lvBadge(lv)+'<span class="lvd">'+esc(LV_META[lv].desc)+' — '+esc(LV_META[lv].act)+'</span><span class="lvcnt">'+items.length+'개 항목</span></div>'+
+    return '<div class="setgrp lvgroup'+(licOpenLv[lv]?"":" closed")+'" id="lvg-'+lv+'"><div class="lvgroup-h tgl" onclick="toggleLvGroup('+lv+')" role="button" aria-expanded="'+(licOpenLv[lv]?"true":"false")+'" title="클릭하면 이 레벨의 항목을 '+(licOpenLv[lv]?"접습니다":"펼칩니다")+'">'+ic("arrow-right",12,"lvchev")+lvBadge(lv)+'<span class="lvd">'+esc(LV_META[lv].desc)+' — '+esc(LV_META[lv].act)+'</span><span class="lvcnt">'+items.length+'개 항목</span></div>'+
     items.map(c=>{
      const users=(DB.settings.licKeywords||[]).map((r,gi)=>({r,gi})).filter(x=>x.r.cat===c.id);
      return '<div class="catcard">'+
@@ -1829,6 +1836,14 @@ function licRulesHTML(){
    '<div class="rcard-btns" style="margin-top:6px"><button class="btn primary sm" onclick="saveLicRules()">'+ic("check",13)+'저장 — 미결 문서 재평가</button></div>'+
   '<div class="setgrp"><div class="setgrp-t">'+ic("scale",14)+' 이 키워드가 하는 일 / 하지 않는 일</div>'+
    '<div class="setgrp-d">하는 일: 표기 문자열 인식(표준 표기 사전 확장) · 사람이 확정한 조직 고유 표기를 자산으로 축적.<br>하지 않는 일: 레벨 부여, 용도 판정, 이미 적재된 문서 변경 — 그건 각각 카탈로그·법무 확정·사후 조치의 몫입니다. 변경 이력은 감사 로그에 남습니다.</div></div>';
+}
+let licOpenLv={1:true}; /* 표기 규칙 탭 아코디언 — 기본은 L1만 펼침 */
+function toggleLvGroup(lv){
+  licOpenLv[lv]=!licOpenLv[lv];
+  const el=document.getElementById("lvg-"+lv);if(!el)return;
+  el.classList.toggle("closed",!licOpenLv[lv]);
+  const h=el.querySelector(".lvgroup-h");
+  if(h){h.setAttribute("aria-expanded",licOpenLv[lv]?"true":"false");h.setAttribute("title","클릭하면 이 레벨의 항목을 "+(licOpenLv[lv]?"접습니다":"펼칩니다"));}
 }
 function addLicKw(cat){
   const el=document.getElementById("lkw-"+cat);if(!el)return;
