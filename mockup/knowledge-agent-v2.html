@@ -1917,12 +1917,7 @@ function connHTML(){
    '<div class="setgrp-d">서비스 계정 권한은 <b>쓰기 + 폴더 생성만</b> — 삭제·개명 권한은 부여 자체를 하지 않습니다(비가역 안전판).</div>'+
    '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">사이트 URL</span><input value="'+esc(C.sp.site)+'" onchange="DB.settings.conn.sp.site=this.value;audit(\'—\',\'연동 변경: SP 사이트\',\'관리자\',this.value);toastMsg(\'저장\')" /></div>'+
    '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">라이브러리</span><input style="max-width:200px" value="'+esc(C.sp.library)+'" onchange="DB.settings.conn.sp.library=this.value;toastMsg(\'저장\')" /></div>'+
-   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">서비스 계정</span><input style="max-width:280px" value="'+esc(C.sp.account)+'" onchange="DB.settings.conn.sp.account=this.value;toastMsg(\'저장\')" /><span class="sig">'+ic("lock",10)+'쓰기+폴더 생성만</span></div></div>'+
-  '<div class="setgrp"><div class="setgrp-t">'+ic("layers",14)+' RAG·Viva — 별도 설정이 없는 이유</div>'+
-   '<div class="setgrp-d">RAG·Viva는 SharePoint 업로드 순간 <b>자동 전파(분리 불가)</b>되므로 별도 엔드포인트·키가 존재하지 않습니다. 여기 입력칸이 없는 것 자체가 이 시스템의 아키텍처입니다.</div>'+
-   '<div class="mirror">'+
-    '<div class="mir-row"><b>사내 AI RAG</b><span class="mir-sys">SP 전파 자동 — 설정 없음 (읽기 전용)</span></div>'+
-    '<div class="mir-row"><b>Viva Learning</b><span class="mir-sys">SP 전파 자동 — 설정 없음 (읽기 전용)</span></div></div></div>';
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">서비스 계정</span><input style="max-width:280px" value="'+esc(C.sp.account)+'" onchange="DB.settings.conn.sp.account=this.value;toastMsg(\'저장\')" /><span class="sig">'+ic("lock",10)+'쓰기+폴더 생성만</span></div></div>';
 }
 function addFolder(){
   const v=val("fld-new");if(!v)return;
