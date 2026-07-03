@@ -1,10 +1,10 @@
 # NAVIEN AI AGENT — 지식 수집·적재 에이전트 (데모)
 
-[![tests](https://github.com/JiwooChoiBusiness/ai365.ai.agent.kd/actions/workflows/test.yml/badge.svg)](https://github.com/JiwooChoiBusiness/ai365.ai.agent.kd/actions/workflows/test.yml)
+[![tests](https://github.com/MCB-Ai365/ai365.ai.agent.kd/actions/workflows/test.yml/badge.svg)](https://github.com/MCB-Ai365/ai365.ai.agent.kd/actions/workflows/test.yml)
 
 AI가 외부 자료를 수집해 **저작권 리스크를 판정**하고, 검증을 통과한 문서만 **SharePoint(사내 지식 저장소)에 비가역 적재**하는 파이프라인의 **인터랙티브 데모**입니다.
 
-**▶ 라이브 데모: https://jiwoochoibusiness.github.io/ai365.ai.agent.kd/**
+**▶ 라이브 데모: https://mcb-ai365.github.io/ai365.ai.agent.kd/**
 
 > ⚠️ **이 저장소는 순수 프런트엔드 데모입니다.** 백엔드·실제 API 연동은 없으며, 모든 데이터는 가상의 시드이고 모든 동작(수집·판정·업로드)은 브라우저 안에서 시뮬레이션됩니다. 등장하는 문서·계약·이메일·URL은 전부 예시입니다.
 
