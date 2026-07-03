@@ -1,0 +1,14 @@
+# 의존성
+node_modules/
+
+# 공개 제외 — 내부 문서는 로컬에만 유지
+docs/
+CLAUDE.md
+
+# 로컬 도구 설정
+.claude/
+
+# OS·편집기 잡파일
+Thumbs.db
+.DS_Store
+*.log

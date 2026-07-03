@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NAVIEN AI AGENT — 지식 수집·적재 에이전트</title>
+<meta name="color-scheme" content="light" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%231B2A6B'/%3E%3Cpolygon points='9,10 18,10 9,31' fill='%23F4731C'/%3E%3Ctext x='21' y='28' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='15' fill='white'%3EKD%3C/text%3E%3C/svg%3E" />
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+
+/* ── 디자인 토큰 ── */
+:root{
+  --bg:#F3F4F7;
+  --surface:#FFFFFF;
+  --line:#E6E8EE; --line2:rgba(16,24,40,.06);
+  --text:#181C25; --t2:#4C5361; --t3:#7F8694;
+  --navy:#1B2A6B; --navy-bg:rgba(27,42,107,.08);
+  --ok:#0E9F5C; --ok-bg:rgba(14,159,92,.10);
+  --teal:#0E8074; --teal-bg:rgba(14,128,116,.10);
+  --warn:#DA7B00; --warn-bg:rgba(224,134,0,.11); --warn-tx:#8A5200;
+  --risk:#B42318; --risk-bg:rgba(180,35,24,.08);
+  --dark:#454A55; --dark-bg:rgba(69,74,85,.10);
+  --orange:#F4731C; --orange-2:#E0640D;
+  --viol:#6A2FE0; --viol-bg:rgba(106,47,224,.09);
+  --sh-xs:0 1px 2px rgba(16,24,40,.05);
+  --sh-sm:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.06);
+  --sh-md:0 2px 4px rgba(16,24,40,.05),0 12px 32px rgba(16,24,40,.09);
+  --sh-lg:0 24px 64px -12px rgba(16,24,40,.32);
+  --font:'Pretendard Variable',Pretendard,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{color:var(--text);font-family:var(--font);font-size:13.5px;
+  background:radial-gradient(1100px 460px at 12% -140px,rgba(27,42,107,.07),transparent 60%),
+             radial-gradient(900px 420px at 92% -180px,rgba(244,115,28,.06),transparent 60%),var(--bg);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:rgba(244,115,28,.24)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#CBD2DD;border-radius:8px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#B4BDCB;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;color:var(--text)}
+input,select,textarea{accent-color:var(--navy)}
+input[type=range]{accent-color:var(--orange)}
+
+.app{max-width:1460px;margin:0 auto;padding:0 26px 44px}
+
+/* ── 헤더 (스티키 글래스 바) ── */
+.hd{position:sticky;top:12px;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin:14px 0 0;padding:10px 16px;min-height:60px;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh-sm)}
+.hd-l{display:flex;align-items:center;gap:12px;min-width:0}
+.kd-svg{height:38px;width:38px;display:block;flex-shrink:0;filter:drop-shadow(0 2px 5px rgba(27,42,107,.28))}
+.brand{display:flex;align-items:baseline;gap:7px;letter-spacing:-.02em;white-space:nowrap}
+.brand b{font-weight:800;font-size:16.5px;color:var(--navy)}
+.brand span{font-weight:700;color:var(--t3);font-size:11px;letter-spacing:.09em}
+.hd-sub{font-size:11.5px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--ok);
+  background:var(--ok-bg);border-radius:999px;padding:7px 12px;white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(14,159,92,.45)}55%{box-shadow:0 0 0 5px rgba(14,159,92,0)}}
+
+/* ── 버튼 ── */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:650;font-size:13px;
+  padding:9px 14px;border-radius:11px;cursor:pointer;border:1px solid var(--line);background:var(--surface);
+  color:var(--t2);transition:border-color .15s,color .15s,background .15s,box-shadow .15s;box-shadow:var(--sh-xs)}
+.btn:hover:not(:disabled){border-color:rgba(27,42,107,.4);color:var(--navy)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.primary{background:linear-gradient(180deg,#FF8B3D,var(--orange));color:#fff;border:none;
+  box-shadow:0 1px 2px rgba(16,24,40,.08),0 6px 16px rgba(244,115,28,.32),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn.primary:hover:not(:disabled){color:#fff;background:linear-gradient(180deg,#F87F2C,var(--orange-2))}
+.btn.danger{color:var(--risk);border-color:rgba(180,35,24,.3)}
+.btn.danger:hover:not(:disabled){background:var(--risk-bg);color:var(--risk);border-color:var(--risk)}
+.btn.sm{padding:7px 11px;font-size:12px;border-radius:9px}
+.btn:focus-visible,.tab:focus-visible,.kpi:focus-visible,.rbtn:focus-visible,.fchip:focus-visible,.sw:focus-visible,.mtab:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+/* ── KPI ── */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0 0}
+.kpi{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:14px 16px 13px;
+  cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s;text-align:left;box-shadow:var(--sh-xs)}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.kpi.cur{border-color:transparent;box-shadow:0 0 0 2px var(--navy),var(--sh-sm)}
+.kpi-top{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2);font-weight:650;margin-bottom:10px}
+.kpi-ico{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+.kpi-go{margin-left:auto;color:var(--t3);opacity:0;transform:translateX(-4px);transition:.16s}
+.kpi:hover .kpi-go{opacity:1;transform:none}
+.kpi-num{font-weight:800;font-size:30px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi-num small{font-size:12px;color:var(--t3);font-weight:600;margin-left:3px;letter-spacing:0}
+.kpi-hint{font-size:11px;color:var(--t3);margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.kpi.navy .kpi-ico{background:var(--navy-bg);color:var(--navy)} .kpi.navy .kpi-num{color:var(--navy)}
+.kpi.ok .kpi-ico{background:var(--ok-bg);color:var(--ok)} .kpi.ok .kpi-num{color:var(--ok)}
+.kpi.warn .kpi-ico{background:var(--warn-bg);color:var(--warn)} .kpi.warn .kpi-num{color:var(--warn)}
+.kpi.risk .kpi-ico{background:var(--risk-bg);color:var(--risk)} .kpi.risk .kpi-num{color:var(--risk)}
+.kpi.viva .kpi-ico{background:var(--viol-bg);color:var(--viol)} .kpi.viva .kpi-num{color:var(--viol)}
+.kpi.warn.cur{box-shadow:0 0 0 2px var(--warn),var(--sh-sm)}
+.kpi.ok.cur{box-shadow:0 0 0 2px var(--ok),var(--sh-sm)}
+.kpi.risk.cur{box-shadow:0 0 0 2px var(--risk),var(--sh-sm)}
+
+/* ── 파이프라인 스트립 ── */
+.pipe{display:flex;align-items:stretch;gap:4px;margin:12px 0 0;padding:11px 12px 9px;
+  background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--sh-xs);
+  overflow-x:auto;scrollbar-width:thin;scrollbar-color:#DCE0E8 transparent}
+.pipe::-webkit-scrollbar{height:6px}
+.pipe::-webkit-scrollbar-thumb{background:#E0E4EA;border:none;background-clip:border-box;border-radius:6px}
+.pipe::-webkit-scrollbar-thumb:hover{background:#CBD2DD;border:none;background-clip:border-box}
+.pipe-node{display:flex;align-items:center;gap:6px;flex:1 0 auto;
+  background:#FAFBFC;border:1px solid var(--line);border-radius:12px;padding:8px 10px;transition:border-color .2s,box-shadow .2s}
+.pipe-node.active{background:#fff;border-color:rgba(244,115,28,.65);box-shadow:0 0 0 3px rgba(244,115,28,.14)}
+.pipe-tt{font-size:11.5px;font-weight:750;color:var(--text);white-space:nowrap}
+.pipe-step{width:19px;height:19px;border-radius:6.5px;display:grid;place-items:center;flex-shrink:0;
+  font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.pipe-step.ai{background:var(--navy-bg);color:var(--navy)}
+.pipe-step.hu{background:var(--warn-bg);color:var(--warn)}
+.pipe-step.lock{background:var(--risk-bg);color:var(--risk)}
+.pipe-step.sys{background:var(--viol-bg);color:var(--viol)}
+.pipe-node.active .pipe-step{background:var(--orange);color:#fff;animation:pulse-o 1.6s ease infinite}
+@keyframes pulse-o{0%,100%{box-shadow:0 0 0 0 rgba(244,115,28,.4)}55%{box-shadow:0 0 0 5px rgba(244,115,28,0)}}
+.pipe-cnt{margin-left:auto;font-size:10.5px;font-weight:750;color:var(--t2);background:#EFF1F5;border-radius:20px;padding:1.5px 7px;font-variant-numeric:tabular-nums}
+.pipe-arr{display:grid;place-items:center;color:#C6CCD6;flex-shrink:0;margin:0 -1px}
+.who-badge{font-size:9.5px;font-weight:800;letter-spacing:.03em;border-radius:5px;padding:2px 5px;flex-shrink:0}
+.who-badge.ai{background:var(--navy-bg);color:var(--navy)}
+.who-badge.hu{background:var(--warn-bg);color:var(--warn)}
+.who-badge.lock{background:var(--risk-bg);color:var(--risk)}
+.who-badge.sys{background:var(--viol-bg);color:var(--viol)}
+
+/* ── 만료 배너 ── */
+.banner{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:11px 15px;border-radius:12px;
+  font-size:12.5px;font-weight:600;line-height:1.55;color:var(--warn-tx);
+  background:linear-gradient(0deg,var(--warn-bg),var(--warn-bg)),var(--surface);
+  border:1px solid rgba(224,134,0,.28);border-left:3px solid var(--warn)}
+.banner svg{flex-shrink:0;color:var(--warn)}
+.banner a{color:var(--warn-tx);font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+/* ── 동기화 스트립 ── */
+.sync{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:11px 15px;border-radius:12px;
+  background:linear-gradient(0deg,var(--navy-bg),var(--navy-bg)),var(--surface);
+  border:1px solid rgba(27,42,107,.2);color:var(--navy);font-size:12.5px;font-weight:650}
+.sync .bar{flex:1;height:6px;border-radius:4px;background:rgba(27,42,107,.14);overflow:hidden}
+.sync .bar span{display:block;height:100%;background:linear-gradient(90deg,var(--navy),#3B4FA8);width:0%;transition:width .5s;border-radius:4px}
+
+/* ── 탭 (세그먼트) ── */
+.tabs{position:sticky;top:84px;z-index:30;display:flex;gap:3px;margin:14px 0 0;padding:5px;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-xs);
+  overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-weight:650;font-size:12.5px;color:var(--t2);background:none;border:none;cursor:pointer;
+  padding:8px 12px;border-radius:9.5px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  transition:background .14s,color .14s;flex-shrink:0}
+.tab:hover{background:#F1F3F7;color:var(--text)}
+.tab.active{color:#fff;background:var(--navy);box-shadow:0 2px 8px rgba(27,42,107,.3)}
+.tab .cnt{font-size:10.5px;font-weight:750;background:#EDEFF4;color:var(--t2);border-radius:20px;padding:1.5px 7px;font-variant-numeric:tabular-nums}
+.tab.active .cnt{background:rgba(255,255,255,.18);color:#fff}
+.view{padding:16px 0 30px}
+@keyframes vf{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.vfade{animation:vf .26s cubic-bezier(.2,.7,.3,1)}
+
+/* ── 공통 칩·배지 ── */
+.lv{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;border-radius:7px;padding:3px 8px;letter-spacing:.01em;white-space:nowrap}
+.lv::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.75}
+.lv.l1{background:var(--ok-bg);color:var(--ok)} .lv.l2{background:var(--teal-bg);color:var(--teal)}
+.lv.l3{background:var(--warn-bg);color:var(--warn)} .lv.l4{background:var(--risk-bg);color:var(--risk)}
+.lv.l5{background:var(--dark-bg);color:var(--dark)}
+.conf{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--t2);font-variant-numeric:tabular-nums}
+.conf .bar{width:44px;height:5px;border-radius:4px;background:#E9EBF0;overflow:hidden}
+.conf .bar i{display:block;height:100%;border-radius:4px}
+.conf.low{color:var(--warn)}
+.route{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:750;border-radius:7px;padding:3px 8px;white-space:nowrap}
+.route.ok{background:var(--ok-bg);color:var(--ok)} .route.warn{background:var(--warn-bg);color:var(--warn)}
+.route.risk{background:var(--risk-bg);color:var(--risk)} .route.dark{background:var(--dark-bg);color:var(--dark)}
+.route.mut{background:#EFF1F5;color:var(--t3)} .route.navy{background:var(--navy-bg);color:var(--navy)}
+.tpill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--t2);background:#F2F4F7;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.eq{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--t2);background:#F8F9FB;border:1px dashed #D9DDE5;border-radius:9px;padding:4.5px 10px;flex-wrap:wrap}
+.eq b{color:var(--navy)}
+.chipline{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.sig{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--t2);
+  background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:3px 8px;line-height:1.5}
+.sig b{color:var(--navy);font-weight:750}
+.sig.ok{border-color:rgba(14,159,92,.45)}
+.sig.warn{border-color:rgba(218,123,0,.5);color:var(--warn)}
+.sig.warn b{color:inherit}
+.sig.risk{border-color:rgba(180,35,24,.5);color:var(--risk)}
+.sig.risk b{color:inherit}
+.sig.def{background:#F6F7FA}
+.sig.user{border-color:rgba(27,42,107,.45)}
+.defkw{color:var(--t3);font-weight:750}
+.evd{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--viol);background:var(--viol-bg);border-radius:7px;padding:2.5px 8px}
+
+/* ── 검토 카드 ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:14px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 17px;
+  display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh-xs);transition:box-shadow .2s,border-color .2s,opacity .25s,transform .25s}
+.rcard:hover{box-shadow:var(--sh-sm)}
+.rcard.leaving{opacity:0;transform:translateX(14px)}
+.rcard-top{display:flex;align-items:flex-start;gap:10px}
+.rcard-title{font-weight:750;font-size:14px;line-height:1.4;letter-spacing:-.01em}
+.rcard-src{font-size:11.5px;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rcard-time{margin-left:auto;font-size:11px;color:var(--t3);white-space:nowrap;font-weight:650;font-variant-numeric:tabular-nums}
+.rcard-sum{margin:0;font-size:12.5px;line-height:1.6;color:var(--t2)}
+.rcard-why{display:flex;gap:8px;font-size:12px;line-height:1.55;color:var(--warn-tx);background:rgba(224,134,0,.08);
+  border-left:3px solid var(--warn);border-radius:6px 10px 10px 6px;padding:9px 12px}
+.rcard-why svg{flex-shrink:0;margin-top:1px;color:var(--warn)}
+.rcard-why.r4{color:var(--risk);background:var(--risk-bg);border-left-color:var(--risk)}
+.rcard-why.r4 svg{color:var(--risk)}
+.rcard-why.r5{color:var(--dark);background:var(--dark-bg);border-left-color:var(--dark)}
+.rcard-why.r5 svg{color:var(--dark)}
+.rcard-act{display:flex;gap:8px;font-size:12px;line-height:1.55;color:var(--navy);background:var(--navy-bg);
+  border-left:3px solid var(--navy);border-radius:6px 10px 10px 6px;padding:9px 12px}
+.rcard-act svg{flex-shrink:0;margin-top:1px}
+.rcard-btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.rbtn{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12px;border-radius:10px;padding:8px 12px;
+  cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--t2);
+  transition:border-color .13s,color .13s,background .13s,box-shadow .13s;box-shadow:var(--sh-xs)}
+.rbtn:hover{border-color:rgba(27,42,107,.5);color:var(--navy)}
+.rbtn.ok{background:var(--ok);border:1px solid var(--ok);color:#fff;box-shadow:0 1px 2px rgba(16,24,40,.08),0 4px 10px rgba(14,159,92,.25)}
+.rbtn.ok:hover{background:#0C8A50;border-color:#0C8A50;color:#fff}
+.rbtn.risk:hover{border-color:var(--risk);color:var(--risk);background:var(--risk-bg)}
+.who{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3);font-weight:600}
+.contact{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--t2);background:#F8F9FB;border-radius:10px;padding:7px 10px;flex-wrap:wrap}
+.contact b{color:var(--navy)}
+.contact button{margin-left:auto}
+.hold-prog{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--t2);font-weight:600;border-top:1px dashed var(--line);padding-top:10px}
+.sw{width:37px;height:21px;border-radius:20px;background:#D8DCE4;border:none;cursor:pointer;position:relative;transition:background .18s;flex-shrink:0;margin-left:auto}
+.sw::after{content:"";position:absolute;top:2.5px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw.on{background:var(--ok)} .sw.on::after{left:18px}
+.sw:hover{filter:brightness(.97)}
+
+/* ── 리스트(로그·적재) ── */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:13px;flex-wrap:wrap}
+.fchip{font-size:12px;font-weight:650;color:var(--t2);background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:6.5px 13px;cursor:pointer;transition:border-color .14s,color .14s,background .14s;box-shadow:var(--sh-xs)}
+.fchip:hover{border-color:rgba(27,42,107,.4);color:var(--navy)}
+.fchip.active{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 2px 8px rgba(27,42,107,.3)}
+.searchbox{font-size:12.5px;border:1px solid var(--line);border-radius:11px;padding:8.5px 13px;min-width:200px;flex:1;max-width:300px;margin-left:auto;background:var(--surface);box-shadow:var(--sh-xs);transition:border-color .15s,box-shadow .15s}
+.searchbox:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,42,107,.12)}
+.searchbox::placeholder{color:var(--t3)}
+.feed{display:flex;flex-direction:column;gap:7px}
+.fitem{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:11px 14px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:var(--sh-xs)}
+.fitem:hover{border-color:rgba(27,42,107,.4);box-shadow:var(--sh-sm)}
+.fitem-time{font-size:11px;color:var(--t3);font-weight:650;width:38px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.fitem-mid{flex:1;min-width:0}
+.fitem-title{font-weight:650;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fitem-meta{font-size:11px;color:var(--t3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fitem-r{display:flex;align-items:center;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.stagechip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:750;color:var(--navy);background:var(--navy-bg);border-radius:8px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.empty{padding:44px 10px;text-align:center;color:var(--t3);font-size:13px;line-height:1.7;background:rgba(255,255,255,.55);border:1px dashed #D5DAE2;border-radius:15px}
+.empty svg{display:block;width:44px;height:44px;padding:11px;margin:0 auto 10px;background:var(--surface);border:1px solid var(--line);border-radius:13px;box-shadow:var(--sh-xs);color:var(--t3)}
+.acard-path{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.oblig{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--teal);background:var(--teal-bg);border-radius:6px;padding:2px 7px;font-weight:650}
+.oblig.warn{background:var(--warn-bg);color:var(--warn-tx)}
+
+/* ── 권리 원장 ── */
+.lic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.lic-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 17px;display:flex;flex-direction:column;gap:9px;box-shadow:var(--sh-xs);transition:box-shadow .2s}
+.lic-card:hover{box-shadow:var(--sh-sm)}
+.lic-h{display:flex;align-items:flex-start;gap:9px}
+.lic-name{font-weight:750;font-size:14px;letter-spacing:-.01em}
+.lic-id{font-size:10.5px;color:var(--t3);font-weight:750;letter-spacing:.04em}
+.dday{margin-left:auto;font-size:11px;font-weight:800;border-radius:7px;padding:3px 9px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dday.okd{background:var(--ok-bg);color:var(--ok)} .dday.warnd{background:var(--warn-bg);color:var(--warn)} .dday.exp{background:var(--dark-bg);color:var(--dark)}
+.lic-row{display:flex;gap:8px;font-size:12px;color:var(--t2);line-height:1.55}
+.lic-row b{color:var(--text);min-width:56px;flex-shrink:0;font-size:11.5px}
+.lic-docs{font-size:11.5px;color:var(--navy);background:var(--navy-bg);border-radius:9px;padding:7px 10px;font-weight:650}
+
+/* ── 카탈로그 레벨 그룹 ── */
+.lvgroup{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.lvgroup-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 2px 0}
+.lvgroup-h .lvd{font-size:11.5px;color:var(--t3)}
+.lvgroup-h .lvcnt{margin-left:auto;font-size:10.5px;font-weight:750;color:var(--t2);background:#EFF1F5;border-radius:20px;padding:1.5px 8px;font-variant-numeric:tabular-nums}
+.catcard{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface)}
+.catcard-h{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.catcard-h>b{font-size:12.5px}
+.catcard-n{font-size:11.5px;color:var(--t3)}
+
+/* ── 감사 로그 ── */
+.audit{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:6px 16px;box-shadow:var(--sh-xs)}
+.a-item{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line2);font-size:12.5px;align-items:baseline}
+.a-item:last-child{border-bottom:none}
+.a-time{color:var(--t3);font-weight:650;font-size:11px;width:40px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.a-body{flex:1;color:var(--t2);line-height:1.55}
+.a-body b{color:var(--text);font-weight:700}
+.a-by{font-size:10.5px;font-weight:750;border-radius:6px;padding:2px 8px;flex-shrink:0;white-space:nowrap}
+.a-by.ai{background:var(--navy-bg);color:var(--navy)} .a-by.hu{background:var(--warn-bg);color:var(--warn)} .a-by.sys{background:var(--viol-bg);color:var(--viol)}
+
+/* ── 모달·다이얼로그 ── */
+.mbg{position:fixed;inset:0;background:rgba(13,16,26,.5);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  display:grid;place-items:center;padding:20px;z-index:50;overflow:auto;animation:fadebg .18s ease}
+@keyframes fadebg{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border-radius:20px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;
+  box-shadow:var(--sh-lg);animation:pop .2s cubic-bezier(.2,.8,.3,1.1)}
+@keyframes pop{from{opacity:0;transform:scale(.965) translateY(8px)}to{opacity:1;transform:none}}
+.modal.sm{max-width:520px}
+/* 낮은 창(사이드 패널 등)에서는 본문을 찌그러뜨리지 말고 모달 전체를 배경 스크롤로 */
+@media (max-height:560px){
+  .mbg{place-items:start center}
+  .modal,.modal.sm{max-height:none}
+  .modal.drawer{position:static;max-width:380px;margin-left:auto}
+}
+.modal-h{display:flex;align-items:center;gap:9px;padding:16px 20px;border-bottom:1px solid var(--line);font-weight:800;font-size:15px;letter-spacing:-.01em}
+.modal-h>svg{color:var(--navy);flex-shrink:0}
+.modal-x{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--t3);padding:6px;border-radius:9px;display:grid;place-items:center;transition:background .13s,color .13s}
+.modal-x:hover{background:#F1F3F7;color:var(--text)}
+.modal-body{padding:18px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+.modal-f{display:flex;align-items:center;gap:9px;padding:14px 20px;border-top:1px solid var(--line);justify-content:flex-end;background:#FBFCFD;border-radius:0 0 20px 20px}
+.modal-f .note{font-size:11.5px;color:var(--t3);margin-right:auto}
+.mtabs{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.mtabs::-webkit-scrollbar{display:none}
+.mtab{font-weight:650;font-size:12.5px;color:var(--t2);background:none;border:none;cursor:pointer;padding:8px 11px;
+  border-radius:9px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap;transition:background .14s,color .14s;flex-shrink:0}
+.mtab:hover{background:#F1F3F7;color:var(--text)}
+.mtab.active{color:var(--navy);background:var(--navy-bg);font-weight:750}
+
+/* ── 설정 폼 ── */
+.setgrp{display:flex;flex-direction:column;gap:9px;background:#FBFCFD;border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+.setgrp-t{display:flex;align-items:center;gap:7px;font-weight:750;font-size:13.5px;letter-spacing:-.01em}
+.setgrp-t>svg{color:var(--navy)}
+.setgrp-d{font-size:12px;color:var(--t3);line-height:1.6}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-size:11.5px;font-weight:700;color:var(--t2)}
+.fld input,.fld select,.fld textarea{font-size:12.5px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.fld textarea{min-height:90px;resize:vertical;line-height:1.6}
+.fld input:focus,.fld select:focus,.fld textarea:focus,.rule input:focus,.rule select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,42,107,.12)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.usebox{display:flex;flex-direction:column;gap:8px}
+.userow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 13px}
+.userow .ut{flex:1}.userow .ut b{font-size:13px;display:block}.userow .ut span{font-size:11.5px;color:var(--t3)}
+.lvrow{display:grid;grid-template-columns:86px 1fr 170px;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.lvrow .d{font-size:11.5px;color:var(--t2);line-height:1.5}
+.lvrow select{font-size:12px;border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:var(--surface)}
+.lvrow .fixed{font-size:11.5px;font-weight:700;color:var(--t3);display:flex;align-items:center;gap:5px}
+.thres{display:flex;align-items:center;gap:12px}
+.thres input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:#E7EAEF;outline:none}
+.thres input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:5px solid var(--orange);box-shadow:0 1px 4px rgba(16,24,40,.25);cursor:pointer;transition:transform .12s}
+.thres input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.1)}
+.thres input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:5px solid var(--orange);box-shadow:0 1px 4px rgba(16,24,40,.25);cursor:pointer}
+.thres b{font-size:14px;color:var(--navy);min-width:52px;text-align:center;background:var(--navy-bg);border-radius:8px;padding:4px 6px;font-variant-numeric:tabular-nums}
+.rule{display:flex;gap:7px;align-items:center}
+.rule input,.rule select{font-size:12px;border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.rule input{flex:1}
+.rule .del{background:none;border:none;color:var(--t3);cursor:pointer;padding:6px;border-radius:8px;display:grid;place-items:center;transition:background .13s,color .13s}
+.rule .del:hover{color:var(--risk);background:var(--risk-bg)}
+.miniadd{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:750;color:var(--navy);background:var(--navy-bg);border:none;border-radius:9px;padding:8px 12px;cursor:pointer;align-self:flex-start;transition:background .14s}
+.miniadd:hover{background:rgba(27,42,107,.14)}
+.srcrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 13px}
+.srcrow .s-mid{flex:1;min-width:0}
+.srcrow .s-name{font-weight:700;font-size:13px}
+.srcrow .s-meta{font-size:11px;color:var(--t3);margin-top:3px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.conn-kind{font-size:10px;font-weight:750;color:var(--t3);background:#EFF1F5;border-radius:5px;padding:1.5px 6px}
+
+/* ── 스냅샷·타임라인·메일 ── */
+.snap{background:#FCFBF7;border:1px solid #EAE6DA;border-radius:13px;overflow:hidden}
+.snap-h{display:flex;align-items:center;gap:7px;padding:9px 13px;background:#F4F1E8;font-size:11px;font-weight:700;color:#6E6A5B;flex-wrap:wrap;border-bottom:1px solid #EAE6DA}
+.snap-b{padding:14px 16px;font-size:12.5px;line-height:1.8;color:#4A4638;font-family:Georgia,'Noto Serif KR',serif}
+.snap-b mark{background:rgba(244,115,28,.28);border-radius:3px;padding:0 2px;color:inherit}
+.hist{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:5px;padding-left:15px}
+.h-item{position:relative;padding:6px 0;font-size:12px;color:var(--t2);line-height:1.55}
+.h-item::before{content:"";position:absolute;left:-20.5px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--surface);border:2.5px solid var(--navy)}
+.h-item:first-child::before{border-color:var(--orange)}
+.h-item b{color:var(--text)}
+.h-item .ht{font-size:10.5px;color:var(--t3);font-weight:600}
+.mailbox{font-size:12.5px;line-height:1.75;background:#FBFCFD;border:1px solid var(--line);border-radius:13px;padding:14px 16px;white-space:pre-wrap;color:var(--t2)}
+
+/* ── 토스트·기타 ── */
+.toastwrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{display:flex;align-items:center;gap:9px;background:#151926;color:#fff;font-size:12.5px;font-weight:600;border-radius:13px;padding:12px 18px;box-shadow:0 12px 36px rgba(0,0,0,.38);animation:up .28s cubic-bezier(.2,.8,.3,1.1);border:1px solid rgba(255,255,255,.08)}
+.toast svg{color:#3DD68C;flex-shrink:0}
+@keyframes up{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.spin{animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.hint-back{font-size:10.5px;color:var(--t3);border:1px dashed #D5DAE2;border-radius:7px;padding:3px 8px;font-weight:600;white-space:nowrap}
+
+/* ── 다운스트림 배포 (RAG·Viva) ── */
+.dist{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:750;border-radius:6px;padding:2.5px 7px;white-space:nowrap}
+.dist.sp{background:var(--navy-bg);color:var(--navy)}
+.dist.on{background:var(--teal-bg);color:var(--teal)}
+.dist.off{background:#EFF1F5;color:var(--t3)}
+.mirror{display:flex;flex-direction:column;gap:8px;background:#F8F9FB;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.mir-row{display:grid;grid-template-columns:145px 1fr;gap:8px;font-size:11.5px;align-items:baseline}
+.mir-row b{color:var(--navy);font-size:11px}
+.mir-sys{color:var(--t2);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;word-break:break-all;line-height:1.6}
+
+/* ── 비가역 플로우 요소 ── */
+.cd{font-weight:800;font-size:18px;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:.5px;
+  background:var(--navy-bg);border-radius:10px;padding:5px 11px;flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.cdbar{height:5px;border-radius:4px;background:#EDEFF3;overflow:hidden}
+.cdbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange),#FF9A55);transition:width 1s linear}
+.fn{display:inline-flex;align-items:center;gap:5px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:var(--t2);background:#F8F9FB;border:1px solid var(--line);border-radius:8px;padding:3.5px 9px;word-break:break-all;margin-top:6px;line-height:1.55}
+.warnbox{display:flex;gap:9px;align-items:flex-start;background:var(--risk-bg);color:var(--risk);border:1px solid rgba(180,35,24,.2);border-left:3px solid var(--risk);border-radius:6px 11px 11px 6px;padding:10px 13px;font-size:12.5px;font-weight:600;line-height:1.65}
+.warnbox svg{flex-shrink:0;margin-top:2px}
+
+/* ── 검토 대기 보조: 진행·우선순위·일괄·키보드 ── */
+.qprog{display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:650;color:var(--t2)}
+.qprog>svg{color:var(--ok);flex-shrink:0}
+.qprog .bar{flex:1;height:6px;border-radius:4px;background:#EDEFF3;overflow:hidden;min-width:60px}
+.qprog .bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ok),#3DD68C);transition:width .3s}
+.qprog b{color:var(--text);font-variant-numeric:tabular-nums}
+.kbdhint{margin-left:auto;font-size:10.5px;color:var(--t3);font-weight:600;white-space:nowrap}
+.kbdhint b{display:inline-block;background:#EFF1F5;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:10px;color:var(--t2);font-family:ui-monospace,Consolas,monospace;margin:0 1px}
+.bulkbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--t2);font-weight:650}
+.bulkbar>svg{color:var(--navy)}
+.rcard.kbd-sel{border-color:transparent;box-shadow:0 0 0 2px var(--navy),var(--sh-sm)}
+.pastdec{display:flex;align-items:baseline;gap:8px;font-size:12px;background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:8px 11px;flex-wrap:wrap}
+.pastdec .pd-r{color:var(--t3);font-size:11.5px;flex:1;min-width:120px}
+
+/* ── 알림 드로어 ── */
+.bellb{position:relative}
+.bellb .bdg{position:absolute;top:-5px;right:-5px;background:var(--risk);color:#fff;font-size:9.5px;font-weight:800;font-style:normal;border-radius:999px;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px;border:2px solid #fff;line-height:1}
+.modal.drawer{position:fixed;top:12px;right:12px;bottom:12px;max-width:380px;width:calc(100% - 24px);max-height:none;border-radius:16px;animation:slidein .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes slidein{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.ntf{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;transition:border-color .13s,box-shadow .13s;background:var(--surface)}
+.ntf:hover{border-color:rgba(27,42,107,.4);box-shadow:var(--sh-xs)}
+.ntf-ico{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+.ntf.warn .ntf-ico{background:var(--warn-bg);color:var(--warn)}
+.ntf.risk .ntf-ico{background:var(--risk-bg);color:var(--risk)}
+.ntf-t{font-size:12.5px;font-weight:700;line-height:1.45}
+.ntf-d{font-size:11.5px;color:var(--t3);margin-top:2px;line-height:1.5}
+
+.pipe-node{cursor:pointer}
+.pipe-node:hover{border-color:rgba(27,42,107,.45)}
+
+/* ── 반응형 ── */
+@media (max-width:1120px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.live{display:none}}
+@media (max-width:840px){
+  .hd-sub{display:none}
+  .tabs{top:78px}
+  .grid2,.lic-grid{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
+  .lvrow{grid-template-columns:76px 1fr}.lvrow select,.lvrow .fixed{grid-column:2}
+  .mir-row{grid-template-columns:110px 1fr}
+}
+@media (max-width:640px){
+  .app{padding:0 12px 32px}
+  .hd{top:8px;margin-top:8px;padding:8px 12px;min-height:54px}
+  .tabs{top:68px}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
+  .kpi-num{font-size:25px}
+  .btn{padding:8px 11px;font-size:12px}
+  .brand span{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div id="modalroot"></div>
+<div id="dlgroot"></div>
+<div class="toastwrap" id="toastroot" role="status" aria-live="polite"></div>
+<script>
+/* ═════════════════════════════════════════════════════════════════
+   1) 유틸 + 아이콘
+   ═════════════════════════════════════════════════════════════════ */
+const ICONS={
+"calendar":'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+"rotate-cw":'<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+"check":'<path d="M20 6 9 17l-5-5"/>',
+"x":'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+"bell-ring":'<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+"shield-alert":'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+"lock":'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+"database":'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+"file-text":'<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+"arrow-right":'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+"loader-2":'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+"inbox":'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+"check-check":'<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+"layers":'<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>',
+"scan-text":'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/>',
+"radio":'<path d="M16.247 7.761a6 6 0 0 1 0 8.478"/><path d="M19.075 4.933a10 10 0 0 1 0 14.134"/><path d="M4.925 19.067a10 10 0 0 1 0-14.134"/><path d="M7.753 16.239a6 6 0 0 1 0-8.478"/><circle cx="12" cy="12" r="2"/>',
+"settings":'<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+"trash-2":'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+"plus":'<path d="M5 12h14"/><path d="M12 5v14"/>',
+"bot":'<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+"folder":'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+"clock":'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+"key":'<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+"link":'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+"eye":'<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+"user":'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+"mail":'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+"scale":'<path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/>',
+"history":'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+"alert-triangle":'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+"camera":'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+"copy":'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+"book-key":'<path d="m19 3 1 1"/><path d="m20 2-4.5 4.5"/><path d="M20 8v13a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H14"/><circle cx="14" cy="8" r="2"/>',
+"shield-check":'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'
+};
+function ic(n,s,c){s=s||16;return '<svg class="'+(c||'')+'" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function daysUntil(iso){return Math.ceil((new Date(iso)-new Date())/86400000);}
+const dateStr=new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+
+/* ═════════════════════════════════════════════════════════════════
+   2) 데이터 계층 — [BACKEND] 이 블록 전체가 API 응답으로 대체될 지점.
+      DB.docs → GET /documents, DB.licenses → GET /licenses,
+      DB.settings → GET /tenants/:id/settings, DB.audit → GET /audit
+   ═════════════════════════════════════════════════════════════════ */
+const LV_META={
+ 1:{name:"L1 자유 이용",short:"L1",desc:"퍼블릭 도메인·명시적 오픈 라이선스",act:"자동 적재"},
+ 2:{name:"L2 조건부 이용",short:"L2",desc:"출처표기·비상업 등 조건부 라이선스",act:"용도 대조 후 적재"},
+ 3:{name:"L3 라이선스 불명",short:"L3",desc:"권리 표기 없음 — 보호가 기본값",act:"사람 검토"},
+ 4:{name:"L4 명시적 제한",short:"L4",desc:"저작권 고지·페이월·재배포 금지",act:"차단 + 라이선스 문의"},
+ 5:{name:"L5 접근 제한",short:"L5",desc:"로그인·페이월 우회가 필요한 접근",act:"수집 자체 차단"}};
+const ROUTE_META={
+ uploaded:{label:"적재됨",tone:"ok",icon:"database"},
+ staged:{label:"업로드 대기",tone:"navy",icon:"clock"},
+ fetching:{label:"원본 확보 중",tone:"navy",icon:"loader-2"},
+ review:{label:"검토",tone:"warn",icon:"bell-ring"},
+ held:{label:"보류",tone:"risk",icon:"lock"},
+ blocked:{label:"수집 차단",tone:"dark",icon:"shield-alert"},
+ rejected:{label:"반려",tone:"mut",icon:"x"},
+ pipeline:{label:"처리 중",tone:"navy",icon:"loader-2"}};
+
+const DB={
+ settings:{
+  usage:{commercial:false,redistribute:false,external:false}, /* 테넌트의 이용 목적 — L2 조건 대조 기준 */
+  confidenceThreshold:70,
+  levelActions:{1:"auto",2:"conditional"}, /* 'review'로 강등 가능(보수 모드) */
+  sources:[ /* 소스는 콘텐츠 유형을 선언하지 않는다 — 유형·분류는 수집 후 문서마다 AI가 판정 */
+   {name:"국가법령정보 OPEN API",url:"https://open.law.go.kr/openApi",kind:"OpenAPI",auth:"••••3A9F",licensed:true,schedule:"1일 1회",on:true},
+   {name:"국가기술표준원 KS",url:"https://standard.go.kr/api",kind:"OpenAPI",auth:"••••8B12",licensed:true,schedule:"1일 1회",on:true},
+   {name:"CrossRef 학술 메타",url:"https://api.crossref.org/works",kind:"REST API",auth:"",licensed:true,schedule:"6시간",on:true},
+   {name:"산업뉴스 와이어(계약)",url:"https://newswire.example/api/v2",kind:"REST API",auth:"••••7C21",licensed:true,schedule:"30분",on:true},
+   {name:"제조사 보도자료 RSS",url:"https://vendor.example/press/rss",kind:"RSS",auth:"",licensed:false,schedule:"1시간",on:false}],
+  classifyRules:[
+   {kw:"공조, HVAC, 환기, 실내공기, 팬코일",cat:"HVAC·공조"},
+   {kw:"보일러, 난방, 히트펌프, 온수, 콘덴싱",cat:"난방·보일러"},
+   {kw:"냉매, 칠러, 냉동, 냉방, GWP",cat:"냉방·냉동"},
+   {kw:"규제, 고시, 배출, 의무, 개정안",cat:"규제·정책"},
+   {kw:"표준, 규격, KS, ISO, ASHRAE",cat:"표준·인증"},
+   {kw:"",cat:"기타"}],
+  folders:["HVAC > 냉난방기","기술매뉴얼 > 보일러","HVAC > 성능·시험","규제·인증 > 국내","시장·경쟁 > 리포트"],
+  catMap:{"HVAC·공조":"HVAC > 냉난방기","난방·보일러":"기술매뉴얼 > 보일러","냉방·냉동":"HVAC > 냉난방기","규제·정책":"규제·인증 > 국내","표준·인증":"HVAC > 성능·시험","기타":"시장·경쟁 > 리포트"}
+ },
+ licenses:[
+  {id:"LIC-001",name:"J. HVAC&R 사내 교육 라이선스",scope:"Journal of HVAC&R",
+   uses:{internal:true,ai:true,education:true,redistribute:false,commercial:false},
+   start:addDays(-120),end:addDays(214),obligations:"출처표기 의무: “© Journal of HVAC&R, 사내 라이선스 이용”",
+   contact:"permissions@jhvacr.example",file:"계약서_JHVACR_2026.pdf",revoked:false},
+  {id:"LIC-002",name:"Apex MI 엔터프라이즈 구독",scope:"Apex Market Intelligence",
+   uses:{internal:true,ai:true,education:false,redistribute:true,commercial:false},
+   start:addDays(-356),end:addDays(9),obligations:"사내 시스템 내 재배포 허용 · 외부 공개 금지",
+   contact:"sales@apex-mi.example",file:"계약서_Apex_Enterprise.pdf",revoked:false}
+ ],
+ docs:[],audit:[]
+};
+
+/* 문서 시드 — [BACKEND] 실제로는 파이프라인 워커가 생성하는 레코드.
+   signals = 검증 워커가 원문에서 추출한 저작권 신호, evidence = 요약의 원문 근거 위치,
+   snapshot = 판정 시점의 근거 스냅샷(감사·방어용) */
+const SEED=[
+ {time:"06:02",type:"규제·고시",title:"저GWP 냉매 전환 의무화 F-gas 규제 개정안",source:"환경부 고시",url:"https://www.me.go.kr/...",lic:"공공누리 제1유형",lv:1,conf:97,
+  summary:"고GWP 냉매의 단계적 사용 제한과 저GWP 대체냉매 전환 일정을 규정한 개정안이 고시되어 냉동·공조설비 설계 반영이 필요하다.",
+  evidence:["p.2 §1 개정 목적","p.5 표3 전환 일정"],signals:[["라이선스 표기","공공누리 제1유형 배지 확인"],["robots.txt","수집 허용"],["페이월","없음"]],
+  snapExc:"이 저작물은 「공공누리 제1유형: 출처표시」 조건에 따라 이용할 수 있습니다. 본 고시는 불소계 온실가스의 단계적 감축을 위하여…",snapMark:"공공누리 제1유형",aud:["친환경설비팀","공조설계팀"]},
+ {time:"06:18",type:"표준·규격",title:"건물 공조설비 에너지효율 등급 KS 기준 개정",source:"국가기술표준원",url:"https://www.kats.go.kr/...",lic:"공공누리 제1유형",lv:1,conf:96,
+  summary:"중앙공조기·팬코일유닛의 에너지효율 측정법과 등급 구간이 개정되어 신규 설비 선정 기준이 강화되었다.",
+  evidence:["p.1 고시문","p.7 부표1 등급 구간"],signals:[["라이선스 표기","공공누리 제1유형"],["페이월","없음"]],
+  snapExc:"본 개정 고시는 공공누리 제1유형에 따라 자유롭게 이용할 수 있으며, 에너지효율 등급 구간은 부표 1과 같이 조정한다…",snapMark:"공공누리 제1유형",aud:["설비기술팀","에너지관리팀"]},
+ {time:"06:51",type:"규제·고시",title:"보일러 질소산화물(NOx) 배출허용기준 강화 고시",source:"환경부",url:"https://www.me.go.kr/...",lic:"공공누리 제1유형",lv:1,conf:95,
+  summary:"산업·상업용 보일러의 NOx 배출허용기준이 강화되어 저NOx 버너 교체 및 인증 대응이 요구된다.",
+  evidence:["p.3 별표2 허용기준"],signals:[["라이선스 표기","공공누리 제1유형"],["robots.txt","수집 허용"]],
+  snapExc:"공공누리 제1유형(출처표시)에 따라 이용 가능. 별표 2의 배출허용기준은 2027년 1월 1일부터 적용한다…",snapMark:"공공누리 제1유형",aud:["시설관리팀","친환경설비팀"]},
+ {time:"07:14",type:"공공데이터",title:"지역별 난방도일(HDD)·냉방도일(CDD) 통계 갱신",source:"한국에너지공단",url:"https://www.energy.or.kr/...",lic:"공공누리 제1유형",lv:1,conf:94,
+  summary:"지역별 냉난방 부하 산정에 쓰이는 도일 통계가 갱신되어 냉난방 용량 설계 검증에 활용 가능하다.",
+  evidence:["데이터셋 메타 §이용조건"],signals:[["라이선스 표기","공공누리 제1유형"],["데이터 API","공식 제공"]],
+  snapExc:"본 데이터는 공공누리 제1유형으로 개방되며 상업적 이용 및 2차 가공이 가능합니다. 기준년: 최근 10개년 평균…",snapMark:"공공누리 제1유형",aud:["에너지관리팀"]},
+ {time:"07:39",type:"기술문서",title:"콘덴싱 보일러 효율 개선 기술자료(협회 공개)",source:"한국설비기술협회",url:"https://www.sarek.or.kr/...",lic:"협회 공개 · 출처표기 조건",lv:2,cond:["attribution"],conf:88,
+  summary:"잠열 회수율을 높이는 콘덴싱 보일러 열교환기 설계와 응축수 처리 가이드가 공개되었다.",
+  evidence:["p.4 그림2 열교환 구조","p.9 §5 응축수 처리"],signals:[["라이선스 표기","출처표기 조건부 공개"],["페이월","없음"]],
+  snapExc:"본 기술자료는 출처를 명시하는 조건으로 자유롭게 열람·활용하실 수 있습니다. 무단 상업적 재판매는 허용되지 않습니다…",snapMark:"출처를 명시하는 조건",aud:["설비기술팀"]},
+ {time:"06:33",type:"뉴스",title:"인버터 히트펌프 신제품 COP 향상 기술 공개",source:"제조사 보도자료",url:"https://vendor.example/press",lic:"벤더 공개 · 비상업 조건",lv:2,cond:["attribution","nc"],conf:58,
+  summary:"부분부하 효율을 개선한 인버터 히트펌프가 출시되어 한랭지 난방 COP가 향상된 성능 데이터가 공개되었다.",
+  evidence:["보도자료 ¶3 성능 수치"],signals:[["라이선스 표기","보도자료 이용 안내(비상업)"],["표기 명확성","낮음 — 문구 모호"]],
+  snapExc:"본 보도자료는 비상업적 보도 목적에 한해 자유롭게 인용할 수 있습니다. 기타 이용은 홍보팀 문의…",snapMark:"비상업적 보도 목적에 한해",aud:["공조설계팀","R&D팀"]},
+ {time:"08:05",type:"기술문서",title:"ASHRAE 환기·실내공기질 가이드 공개 요약본",source:"표준화기구 공개 요약",url:"https://www.ashrae.org/...",lic:"표기 없음 · 조건 불명",lv:3,conf:81,
+  summary:"실내공기질 확보를 위한 환기율 산정과 공조 운전 권장사항의 개정 핵심이 공개 요약본으로 배포되었다.",
+  evidence:["요약본 p.2 환기율 산식"],signals:[["라이선스 표기","없음 — 보호가 기본값"],["이용약관 링크","발견되지 않음"],["페이월","없음"]],
+  snapExc:"This executive summary highlights key changes to ventilation rate procedures… (라이선스·재사용 조건 문구 없음)",snapMark:"",aud:["공조설계팀","품질경영팀"],
+  contact:"standards@ashrae.example"},
+ {time:"09:10",type:"백서",title:"상업용 보일러 교체 수요 벤치마크 백서",source:"Strathorn Consulting 백서",url:"https://strathorn.example/...",lic:"등록 후 무료 · 재배포 조건 불명확",lv:3,conf:74,
+  summary:"노후 보일러 교체 주기와 고효율 전환 투자수익을 산업별로 진단한 벤치마크 결과를 제시한다.",
+  evidence:["p.6 표4 교체주기","p.11 ROI 모델"],signals:[["라이선스 표기","불명확 — '무료 제공'만 명시"],["재배포 조건","명시 없음"],["등록 게이트","이메일 등록 후 다운로드"]],
+  snapExc:"Download our complimentary benchmark whitepaper. © Strathorn Consulting. All insights are provided free of charge for registered users…",snapMark:"free of charge for registered users",aud:["전략기획팀","시설관리팀"],
+  contact:"insights@strathorn.example"},
+ {time:"07:02",type:"논문",title:"지열 히트펌프 시스템의 계간 성능계수 실증 연구",source:"Journal of HVAC&R (구독 저널)",url:"https://jhvacr.example/article/8817",lic:"© All Rights Reserved · 구독",lv:4,conf:93,
+  summary:"상업건물 8개소의 24개월 데이터로 지열 히트펌프의 계절 성능계수(SCOP)와 회수기간을 정량 분석했다.",
+  evidence:["p.4 표2 SCOP 실측","p.9 회수기간 모델"],signals:[["저작권 고지","© All Rights Reserved"],["페이월","구독 필요"],["재사용 조건","별도 허락 요구"]],
+  snapExc:"© 2026 Journal of HVAC&R. All rights reserved. No part of this publication may be reproduced without prior written permission…",snapMark:"All rights reserved",aud:["R&D팀","에너지관리팀"],
+  contact:"permissions@jhvacr.example"},
+ {time:"08:22",type:"리포트",title:"글로벌 HVAC·히트펌프 시장 2026 전망 리포트",source:"Apex Market Intelligence (유료)",url:"https://apex-mi.example/reports/hvac-2026",lic:"유료 구독 · 좌석당 라이선스",lv:4,conf:91,
+  summary:"히트펌프 난방 전환과 데이터센터 냉각 수요로 2026년 HVAC 시장이 성장할 것으로 전망하며 5년 예측 모델을 포함한다.",
+  evidence:["p.12 그림7 성장 전망","p.30 예측 모델 가정"],signals:[["저작권 고지","named-seat 구독 약관"],["페이월","구독 필요"],["재배포","약관상 금지"]],
+  snapExc:"This report is licensed to named subscribers only. Redistribution, in whole or in part, is prohibited without an enterprise license…",snapMark:"Redistribution … is prohibited",aud:["전략기획팀","구매팀"],
+  contact:"sales@apex-mi.example"},
+ {time:"08:47",type:"논문",title:"냉매 누출이 칠러 효율에 미치는 영향 메타분석",source:"Refrigeration Science Review (저널)",url:"https://refsci.example/article/12345",lic:"© 저작권 보유",lv:4,conf:92,
+  summary:"다수 현장연구를 종합해 냉매 충전량 편차와 누출이 칠러 COP·소비전력에 미치는 영향을 정량 분석했다.",
+  evidence:["p.5 그림3 COP 저하 곡선"],signals:[["저작권 고지","© 표기 확인"],["페이월","기관 구독"],["그림·표 재사용","허락 필요"]],
+  snapExc:"© Refrigeration Science Review. Reuse of figures and tables requires permission from the publisher…",snapMark:"requires permission",aud:["설비기술팀","정비교육팀"],
+  contact:"rights@refsci.example"},
+ {time:"09:34",type:"서적",title:"냉동·공조 설비 설계 실무 핸드북(전자책)",source:"기술출판사 전자책",url:"https://ebook.techpub.example/hvac",lic:"© 출판사 저작권",lv:4,conf:90,
+  summary:"냉매 사이클·열부하 계산·덕트 설계 등 냉동공조 실무 전반을 다루는 전자서적으로 설계 표준 참고자료로 적합하다.",
+  evidence:["목차 기반 범위 평가"],signals:[["저작권 고지","출판사 ©"],["DRM","적용"],["발췌·가공","이용 허락 필요"]],
+  snapExc:"© 기술출판사. 이 책의 무단 전재와 복제를 금합니다. 교육 목적의 발췌 이용은 출판사의 서면 동의가 필요합니다…",snapMark:"무단 전재와 복제를 금합니다",aud:["공조설계팀","신입교육"],
+  contact:"rights@techpub.example"},
+ {time:"09:28",type:"데이터셋",title:"국가별 냉난방 설비 설치 현황 프리미엄 데이터셋",source:"ChainData Pro (유료 데이터)",url:"https://chaindata.example/hvac-install",lic:"재배포 명시 금지",lv:4,conf:95,
+  summary:"국가·건물용도별 냉난방기·히트펌프·보일러 설치 대수와 교체 주기를 제공하는 프리미엄 데이터셋이다.",
+  evidence:["데이터 사전 v3.2"],signals:[["약관","재배포 명시적 금지"],["페이월","유료 구독"]],
+  snapExc:"License terms: Data may not be redistributed, resold, or embedded in downstream systems without a Data License Agreement…",snapMark:"may not be redistributed",aud:["구매팀","전략기획팀"],
+  contact:"data-license@chaindata.example"},
+ {time:"09:41",type:"기술문서",title:"경쟁사 파트너 포털 내부 기술문서",source:"경쟁사 파트너 포털",url:"https://partner.rival.example/docs",lic:"로그인 필요 · 접근 통제",lv:5,conf:98,
+  summary:"파트너 인증 로그인 뒤에만 접근 가능한 자료로, 수집 시도 자체가 접근 통제 우회에 해당한다.",
+  evidence:[],signals:[["접근 통제","파트너 로그인 필수"],["robots.txt","수집 금지"],["판정","수집 단계에서 차단"]],
+  snapExc:"(수집 차단 — 스냅샷 없음) 로그인 게이트 감지: partner.rival.example/login 으로 리다이렉트됨.",snapMark:"",aud:[]}
+];
+
+/* ═════════════════════════════════════════════════════════════════
+   3) 판정 엔진 + 비가역 적재 플로우
+      - 기본 레벨은 절대 덮어쓰지 않고 evaluate(기본 레벨 ⊕ 유효 라이선스 ⊕ 테넌트 정책)로 계산
+      - 원본 확보·검증이 업로드의 전제조건 (원본 없이는 RAG·Viva로 못 감)
+      - SharePoint 업로드는 비가역: 안전장치는 사전 게이트(원본 대조·유예)와 사후 조치(인시던트)
+      [BACKEND] 검증 워커 · 원본 확보 워커 · 업로드 게이트웨이(멱등) · 인시던트 워크플로우
+   ═════════════════════════════════════════════════════════════════ */
+DB.uploads=[];   /* 업로드 원장 — append-only. 무엇이 언제 어떤 근거로 올라갔는가 */
+DB.incidents=[]; /* 사후 조치 대장 — 회수 불가 세계의 보완재 */
+DB.settings.uploadDelaySec=60;  /* 업로드 유예 — 이 시간 동안만 취소 가능 (데모: 1분) */
+DB.settings.naming=true;        /* 파일명 규칙: 제목 + 불변 포인터 코드 */
+DB.settings.folderThreshold=75; /* R15: 폴더 매칭 신뢰도 임계 — 미만이면 자동 업로드 보류, 사람 확인 요구 */
+DB.settings.domainDesc="HVAC(냉난방공조)·보일러·히트펌프 제조사의 기술 자료, 규제·표준 동향, 시장 조사";
+DB.settings.keywords=["히트펌프","냉매","보일러","EPBD","COP","콘덴싱"];
+DB.settings.notify={email:"kb-admin@navien.co.kr",d30:true,d7:true};
+/* 저작권 표기 키워드 → 카탈로그 매핑. 키워드는 레벨을 직접 정하지 않고 카탈로그 항목에 연결만 한다
+   (레벨·3용도 verdict는 카탈로그가 보유 — "상향은 라이선스로만" 원칙 유지). [BACKEND] C13 별칭 + C14 매칭 */
+DB.settings.licKeywords=[ /* 사용자 추가분 — 기본 탐지 키워드는 CATALOG.aliases */
+ {kw:"무단 복제를 금합니다",cat:"KR-NEWS"}
+];
+/* 연동 설정 — 키는 화면에서 마스킹, 실제 저장은 시크릿 매니저. RAG·Viva는 SP 전파 자동이라 설정 대상이 아님. */
+DB.settings.conn={
+ llm:{provider:"Anthropic",model:"claude-sonnet-4-6",key:"sk-ant-••••••••••••3f2a"},
+ sp:{site:"https://navien.sharepoint.com/sites/KB",library:"문서",account:"svc-kb-agent@navien.co.kr"}
+};
+DB.licenses[0].survival=true;   /* LIC-001: 계약 종료 후 기적재분 유지 조항 포함 */
+DB.licenses[1].survival=false;  /* LIC-002: 잔존 조항 없음 — 만료 시 기적재분이 리스크 */
+
+/* ── 라이선스 카탈로그: 라이선스 '종류'의 사전 (명세 PART 1)
+   판정 순서: ①코드 정확 매칭(호출#5 생략) ②미스만 AI 신호 추출 ③사람 확정분은 카탈로그에 축적
+   uses verdict: a=allow · r=legal_review(법무 확정 대기 → 자동 적재 금지 R13) · d=계약 필요/불가
+   [BACKEND] license_catalog + catalog_tenant_overlay 테이블 */
+const CATALOG=[
+ {id:"KOGL-0",family:"공공누리",name:"제0유형 · 표시 면제 자유이용",lv:1,cond:[],aliases:["공공누리 제0유형","공공누리 0유형","KOGL Type 0"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"출처표시 의무까지 면제 — 제3자 권리 포함분만 주의"},
+ {id:"KOGL-1",family:"공공누리",name:"제1유형 · 출처표시",lv:1,cond:["attribution"],aliases:["공공누리 제1유형","공공누리 1유형","KOGL Type 1","kogl.or.kr/info/license.do?type=1"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"상업·변형 모두 허용 — 가장 안전한 소스"},
+ {id:"KOGL-2",family:"공공누리",name:"제2유형 · 출처+상업금지",lv:2,cond:["attribution","nc"],aliases:["공공누리 제2유형","상업적 이용금지 (공공누리)","KOGL Type 2"],uses:{view:"a",ai:"r",edu:"r"},legalRef:null,note:"영리기업 사내 이용의 '비영리' 해석 — 법무 확정 필요"},
+ {id:"KOGL-3",family:"공공누리",name:"제3유형 · 출처+변경금지",lv:2,cond:["attribution","nd"],aliases:["공공누리 제3유형","변경금지 (공공누리)","KOGL Type 3"],uses:{view:"a",ai:"r",edu:"a"},legalRef:null,note:"ND ↔ RAG 요약·임베딩의 2차적저작물성 쟁점"},
+ {id:"KOGL-4",family:"공공누리",name:"제4유형 · 출처+상업금지+변경금지",lv:2,cond:["attribution","nc","nd"],aliases:["공공누리 제4유형","공공누리 4유형","KOGL Type 4"],uses:{view:"a",ai:"r",edu:"r"},legalRef:null,note:"가장 제한적 KOGL — NC·ND 쟁점이 중첩"},
+ {id:"KOGL-AI",family:"공공누리",name:"AI유형 · AI 학습용 공공저작물",lv:2,cond:["attribution","no-redist"],aliases:["공공누리 AI유형","AI 학습용 공공저작물","KOGL AI"],uses:{view:"a",ai:"a",edu:"r"},legalRef:null,note:"AI 학습·인덱싱 명시 허용(재판매 금지) — 원문 교육 게시가 '학습용 이용' 범위인지 법무 확정 필요"},
+ {id:"CC0-1.0",family:"CC",name:"CC0 권리 포기",lv:1,cond:[],aliases:["CC0","퍼블릭 도메인 기증","creativecommons.org/publicdomain/zero"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"유일하게 무조건 L1인 CC"},
+ {id:"US-GOV",family:"공공",name:"미국 연방정부 저작물",lv:1,cond:[],aliases:["U.S. Government Work","work of the U.S. Government","17 U.S.C. 105"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"미국 내 퍼블릭 도메인 — DOE·EPA 등 기술 자료의 안전한 소스"},
+ {id:"COPYRIGHT-EXCLUDED",family:"공공",name:"보호 제외 저작물 (저작권법 제7조)",lv:1,cond:[],aliases:["저작권법 제7조","비보호저작물","사실의 전달에 불과한 시사보도","단순 사실보도"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"법령·고시·판결·단순 사실보도 — 민간 해설·주석·도표는 별도 저작물이므로 분리"},
+ {id:"CC-BY-4.0",family:"CC",name:"저작자표시 4.0",lv:2,cond:["attribution"],aliases:["CC BY 4.0","저작자표시 4.0","creativecommons.org/licenses/by/4.0"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"출처표기는 파일명 코드+메타로 이행"},
+ {id:"CC-BY-SA-4.0",family:"CC",name:"저작자표시-동일조건 4.0",lv:2,cond:["attribution","sa"],aliases:["CC BY-SA","by-sa/4.0","저작자표시-동일조건변경허락"],uses:{view:"a",ai:"r",edu:"a"},legalRef:null,note:"SA — 파생물 공개 의무가 RAG 인덱스·요약에 미치는지 쟁점 (사내 비공개와 충돌 소지)"},
+ {id:"CC-BY-NC-SA-4.0",family:"CC",name:"저작자표시-비영리-동일조건 4.0",lv:2,cond:["attribution","nc","sa"],aliases:["CC BY-NC-SA","by-nc-sa/4.0","저작자표시-비영리-동일조건변경허락"],uses:{view:"a",ai:"r",edu:"r"},legalRef:null,note:"NC+SA 중첩 — 비영리 해석과 파생물 공개 의무 모두 확정 필요"},
+ {id:"CC-BY-NC-ND-4.0",family:"CC",name:"저작자표시-비영리-변경금지 4.0",lv:2,cond:["attribution","nc","nd"],aliases:["CC BY-NC-ND","by-nc-nd/4.0","저작자표시-비영리-변경금지"],uses:{view:"a",ai:"r",edu:"r"},legalRef:null,note:"가장 제한적 CC — KOGL-4와 동형 (NC·ND 중첩)"},
+ {id:"CC-BY-NC-4.0",family:"CC",name:"저작자표시-비영리 4.0",lv:2,cond:["attribution","nc"],aliases:["CC BY-NC","by-nc/4.0","저작자표시-비영리"],uses:{view:"a",ai:"r",edu:"r"},legalRef:null,note:"NC의 기업 사내 이용 — 행위 기준 판단이나 사안 의존적 (판례 혼재)"},
+ {id:"CC-BY-ND-4.0",family:"CC",name:"저작자표시-변경금지 4.0",lv:2,cond:["attribution","nd"],aliases:["CC BY-ND","by-nd/4.0","저작자표시-변경금지"],uses:{view:"a",ai:"r",edu:"a"},legalRef:null,note:"원문 그대로는 OK — RAG 청크 발췌가 '변경'인지가 쟁점"},
+ {id:"ODC-PDDL",family:"데이터",name:"PDDL · DB 퍼블릭 도메인",lv:1,cond:[],aliases:["PDDL","Public Domain Dedication and License","opendatacommons.org/licenses/pddl"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"데이터베이스를 퍼블릭 도메인에 두는 방식 — 원천 데이터 품질·개인정보만 확인"},
+ {id:"ODC-BY",family:"데이터",name:"ODC-BY · 출처표시 DB",lv:2,cond:["attribution"],aliases:["ODC-BY","opendatacommons.org/licenses/by"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"CC-BY의 데이터베이스판 — 출처표기는 파일명 코드+메타로 이행"},
+ {id:"ODBL",family:"데이터",name:"ODbL · 출처표시+동일조건 DB",lv:2,cond:["attribution","sa"],aliases:["ODbL","Open Database License","opendatacommons.org/licenses/odbl"],uses:{view:"a",ai:"r",edu:"a"},legalRef:null,note:"파생 DB 공개 의무 — 사내 RAG 인덱스가 파생 DB에 해당하는지 법무 확정 필요"},
+ {id:"OSS-PERMISSIVE",family:"오픈소스",name:"허용적 라이선스 문서 (MIT·Apache·BSD)",lv:2,cond:["attribution"],aliases:["MIT License","Apache License","Apache-2.0","BSD License"],uses:{view:"a",ai:"a",edu:"a"},legalRef:"LEGAL-OP-2026-03",note:"고지 유지 조건 — 문서 라이선스와 코드 라이선스는 분리 확인"},
+ {id:"OSS-COPYLEFT",family:"오픈소스",name:"카피레프트 문서 (GPL·GFDL)",lv:2,cond:["attribution","sa"],aliases:["GNU GPL","GPL-3.0","GPL-2.0","GFDL","카피레프트"],uses:{view:"a",ai:"r",edu:"a"},legalRef:null,note:"동일조건 계열 — 파생물 공개 의무의 사내 시스템 적용 여부 확정 필요"},
+ {id:"PUBLISHER-SUB",family:"학술",name:"구독 저널 (Elsevier·IEEE 등)",lv:4,cond:["seat_limit"],aliases:["sciencedirect.com","ieeexplore.ieee.org","link.springer.com","onlinelibrary.wiley.com","구독자 전용 콘텐츠"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"구독=개인 열람권. 사내 게시·TDM은 별도 계약 → 권리 원장으로"},
+ {id:"KR-NEWS",family:"언론",name:"국내 언론 기사",lv:4,cond:["link_only"],aliases:["무단 전재 및 재배포 금지","무단전재","뉴스 저작권"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"사내 게시는 유료 라이선스가 원칙 — 링크 공유만 대체 경로"},
+ {id:"STANDARDS-PUR",family:"표준",name:"구매 규격 (ISO·KS·ASHRAE)",lv:4,cond:["seat_limit"],aliases:["iso.org","ashrae.org","kssn.net","규격 구매"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"구매=열람권 ≠ 게시권. 기업 라이선스 별도"},
+ {id:"AI-TRAINING-BAN",family:"약관",name:"AI 학습 금지 약관 명시",lv:4,cond:[],aliases:["AI 학습 금지","AI training prohibited","TDM 금지","텍스트·데이터 마이닝 금지","AI/ML 사용 금지"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"명시적 opt-out(EU DSM 4조 등) — 공정이용 주장도 약화되므로 별도 AI 라이선스로만 해제"},
+ {id:"NO-MARKING",family:"특수",name:"표기 전무",lv:3,cond:[],aliases:[],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"무방식주의 — 표기 없어도 저작권 자동 발생. 보호가 기본값"},
+ {id:"EXPIRED-COPYRIGHT",family:"특수",name:"보호기간 만료 주장 자료",lv:3,cond:[],aliases:["퍼블릭 도메인","public domain","보호기간 만료","저작권 만료"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"만료 판정(사후 70년·상호주의 등)은 자동화 금지 — 개별 법무 검토"},
+ {id:"PAYWALL-LOGIN",family:"특수",name:"유료·로그인 장벽",lv:5,cond:[],aliases:["로그인 필요","회원 전용","파트너 전용","페이월"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"장벽 뒤 접근은 계약 위반 소지 — 수집 차단. 정당 계정으로 확보한 파일은 권리 확보 후 수동 경로"},
+ {id:"DRM-PROTECTED",family:"특수",name:"DRM 보호 전자문서",lv:5,cond:[],aliases:["DRM 적용","기술적 보호조치"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"기술적 보호조치 무력화 금지(저작권법 제104조의2) — 시도 자체 금지"},
+ {id:"TOS-CRAWL-BAN",family:"특수",name:"약관·robots 수집 금지",lv:5,cond:[],aliases:["자동화 수집 금지","크롤링 금지","무단 수집 금지"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"robots.txt·약관의 수집 금지 신호 — 크롤 자체를 건너뛰고 사유 기록"},
+ {id:"PII-SENSITIVE",family:"특수",name:"개인정보·민감정보 포함",lv:5,cond:[],aliases:["개인정보 포함","민감정보","비식별 필요"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"저작권 밖 축(개인정보보호법) — 적법 근거·비식별 없이는 적재 불가. 본선은 업로드 게이트의 보안·개인정보 스캔"},
+ {id:"NDA-CONFIDENTIAL",family:"특수",name:"NDA·영업비밀·비공개 자료",lv:5,cond:[],aliases:["대외비","영업비밀","비밀유지계약","Confidential"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"저작권 허락과 별개인 계약 위반 축 — 권한자 명시 승인 없이는 수집·적재 불가"},
+ {id:"ILLEGAL-SOURCE",family:"특수",name:"불법 스캔·출처 불명",lv:5,cond:[],aliases:["불법 스캔","무단 공유본","무단 배포본","출처 불명"],uses:{view:"d",ai:"d",edu:"d"},legalRef:null,note:"권리 출처가 소명되지 않으면 사용 불가 — 합법 원천 재확보를 요청"}
+];
+function kwsFor(c){return (c.aliases||[]).concat((DB.settings.licKeywords||[]).filter(r=>r.cat===c.id).map(r=>r.kw));}
+function catEntry(d){
+  if(d.catalogId)return CATALOG.find(c=>c.id===d.catalogId)||null;
+  const hay=((d.lic||"")+" "+(d.snapMark||"")).toLowerCase();
+  for(const c of CATALOG){
+    if(kwsFor(c).some(k=>k&&hay.indexOf(k.toLowerCase())>=0)){d.catalogId=c.id;return c;}
+  }
+  return null;
+}
+const RULE_DESC={R01:"접근 통제 — 수집 차단",R02:"카탈로그 표준 표기 인식 (AI 분석 생략)",R06:"명시 조건 추출",R07:"L2 조건 ↔ 용도 불일치",R08:"무표기 — 보호 기본값",R09:"ⓒ+문의처 → 권리 확보 경로",R10:"유효 라이선스 적용",R11:"라이선스 번들 미충족",R12:"신뢰도 임계 미달",R13:"legal_review 미확정 — 자동 적재 금지",R14:"파일 내부 고지 불일치"};
+function legalConfirm(id){
+  const c=CATALOG.find(x=>x.id===id);if(!c||c.legalRef)return;
+  c.legalRef="LEGAL-OP-2026-07";
+  ["ai","edu"].forEach(k=>{if(c.uses[k]==="r")c.uses[k]="a";});
+  audit("—","카탈로그 법무 확정: "+id,"관리자","법무 확정 대기 → 허용 · 의견서 "+c.legalRef+" 등록 · 미결 재평가");
+  const n=reEvaluateAll("시스템(카탈로그)",id+" 법무 확정에 따른 재평가");
+  toastMsg(id+" 확정 — 미결 "+n+"건 재평가");render();
+}
+
+function classifyCat(d){
+  const t=((d.title||"")+" "+(d.summary||"")).toLowerCase();
+  for(const r of DB.settings.classifyRules){
+    const kws=(r.kw||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+    if(kws.length&&kws.some(k=>t.indexOf(k)>=0))return r.cat;
+  }
+  const fb=DB.settings.classifyRules.find(r=>!(r.kw||"").trim());return fb?fb.cat:"기타";
+}
+function licStatus(l){
+  if(l.revoked)return{k:"revoked",label:"해지됨"};
+  const d=daysUntil(l.end);
+  if(d<0)return{k:"expired",label:"만료"};
+  if(d<=30)return{k:"expiring",label:"D-"+d+" 임박"};
+  return{k:"active",label:"유효 · D-"+d};
+}
+/* 적재 = SharePoint+RAG+Viva '동시' 업로드(분리 불가)이므로,
+   라이선스는 사내 열람·AI 인덱싱·교육 게시를 전부 커버해야만 업로드를 허용한다. */
+function validLicenseFor(d){
+  return DB.licenses.find(l=>{
+    const s=licStatus(l).k; if(s!=="active"&&s!=="expiring")return false;
+    if((d.source||"").indexOf(l.scope)<0)return false;
+    if(l.uses.ai===false||!l.uses.education)return false; /* 번들 미충족 → 이 라이선스로는 적재 불가 */
+    if(DB.settings.usage.commercial&&!l.uses.commercial)return false;
+    if(DB.settings.usage.redistribute&&!l.uses.redistribute)return false;
+    return true;
+  });
+}
+/* evaluate — '업로드 자격'을 판정. uploaded 자격이어도 실제 업로드는
+   원본 확보 → 유예 대기를 거쳐야만 실행된다. */
+/* evaluate — '업로드 자격' 판정. 룰 테이블 R01~R15의 목업 구현 (명세 §1.5)
+   판정 결과에 applied rules를 남겨 감사 로그의 "왜"를 재현 가능하게 한다. */
+function evaluate(d){
+  const R=[],entry=catEntry(d);if(entry)R.push("R02");
+  const tag=r=>" ["+r.join("·")+"]";
+  if(d.lv===5)return{route:"blocked",rules:["R01"],why:"L5 — 접근 통제 우회가 필요해 수집 단계에서 차단"+tag(["R01"])};
+  const lic=validLicenseFor(d);
+  if(lic){R.push("R10");return{route:"uploaded",lic:lic.id,rules:R,why:"기본 "+LV_META[d.lv].short+" ⊕ "+lic.id+" 적용 → 이용 가능"+tag(R)};}
+  if(entry&&!entry.legalRef&&(entry.uses.ai==="r"||entry.uses.edu==="r")){R.push("R13");
+    return{route:"review",rules:R,why:"카탈로그 "+entry.id+" 표기 인식 — "+(entry.uses.ai==="r"?"AI 인덱싱":"")+(entry.uses.ai==="r"&&entry.uses.edu==="r"?"·":"")+(entry.uses.edu==="r"?"Viva 교육":"")+" 용도가 법무 확정 대기(legal_review)라 자동 적재 금지"+tag(R)};}
+  if(d.conf<DB.settings.confidenceThreshold){R.push("R12");
+    return{route:"review",rules:R,why:"AI 신뢰도 "+d.conf+"% < 임계값 "+DB.settings.confidenceThreshold+"% — 사람 검토로 회부"+tag(R)};}
+  if(d.lv===1){
+    if(DB.settings.levelActions[1]==="review"){R.push("R12");return{route:"review",rules:R,why:"보수 모드 — L1도 검토로 강등"+tag(R)};}
+    return{route:"uploaded",rules:R,why:"L1 자유 이용 — 자동 적재 경로"+(entry?" (카탈로그 "+entry.id+")":"")+tag(R.length?R:["R02"])};}
+  if(d.lv===2){
+    if(DB.settings.levelActions[2]==="review"){R.push("R12");return{route:"review",rules:R,why:"보수 모드 — L2를 검토로 강등"+tag(R)};}
+    const c=d.cond||[];
+    if(c.includes("nc")&&DB.settings.usage.commercial){R.push("R07");return{route:"held",rules:R,why:"L2 조건 불일치 — 비상업 한정 자료인데 상업적 이용이 설정됨"+tag(R)};}
+    if(c.includes("no-redist")&&DB.settings.usage.redistribute){R.push("R07");return{route:"held",rules:R,why:"L2 조건 불일치 — 재배포 금지 자료인데 재배포 이용이 설정됨"+tag(R)};}
+    R.push("R06");return{route:"uploaded",rules:R,why:"L2 조건("+c.join(", ")+")이 현재 이용 목적과 부합 — 조건부 적재 경로"+tag(R)};}
+  if(d.lv===3){R.push("R08");return{route:"review",rules:R,why:"L3 라이선스 불명 — 표기 부재는 자유 이용이 아니라 보호가 기본값"+tag(R)};}
+  const near=DB.licenses.find(l=>!l.revoked&&licStatus(l).k!=="expired"&&(d.source||"").indexOf(l.scope)>=0);
+  if(near){R.push("R11");return{route:"held",rules:R,why:"L4 — "+near.id+" 계약은 있으나 용도 불충족("+(near.uses.ai===false?"AI 인덱싱 미포함":"교육 게시 미포함")+"). 적재는 RAG·Viva 동시 전파라 부분 적재가 불가능 — 용도 추가 협상 필요"+tag(R)};}
+  R.push("R09");return{route:"held",rules:R,why:"L4 명시적 제한 — 유효한 라이선스 없음, 권리 확보 대기"+tag(R)};
+}
+function audit(docTitle,fromTo,by,note){
+  DB.audit.unshift({t:nowHM(),doc:docTitle,move:fromTo,by:by,note:note||""});
+}
+function distFor(){return{rag:true,viva:true};} /* 분리 불가 — SP 업로드 순간 둘 다 */
+function markDist(d){
+  d.dist=distFor();
+  audit(d.title,"배포: SharePoint(원본) → RAG · Viva 동시 업로드","시스템(배포)","분리 불가 — 폴더 트리 동일 미러 · 배포 확정");
+}
+function transition(d,to,by,note){
+  const from=d.state; if(from===to)return;
+  d.state=to; d.history.push({t:nowHM(),from,to,by,note:note||""});
+  audit(d.title,(ROUTE_META[from]?ROUTE_META[from].label:from)+" → "+ROUTE_META[to].label,by,note);
+  if(to==="uploaded")markDist(d);
+}
+/* ── 파일명 규칙: 사람이 읽는 제목 + 불변 포인터 코드 [KD-ID·레벨·라이선스] ──
+   포인터만 넣는 이유: 만료일 같은 가변 정보는 파일명이 거짓말을 하게 되므로,
+   ID로 권리 원장·업로드 원장을 역추적하는 방식. SharePoint 금지 문자 제거 포함. */
+function sanitizeTitle(t){return String(t).replace(/[\\/:*?"<>|#%&{}~]/g,"").replace(/\s+/g," ").trim().slice(0,34);}
+function fileNameFor(d){
+  const ext=(d.fileMeta&&d.fileMeta.ext)||"pdf";
+  if(!DB.settings.naming)return sanitizeTitle(d.title)+"."+ext;
+  return sanitizeTitle(d.title)+" [KD-"+d.id+"·L"+d.lv+(d.appliedLic?"·"+d.appliedLic:"")+"]."+ext;
+}
+function genMeta(d,x){x=x||{};
+  return{ext:x.ext||"pdf",size:x.size||"1.0MB",quality:x.quality||"native",inner:x.inner||"match",
+   hash:"sha256:"+(d.id+"9f3ab27c4e11d8").slice(0,4).toLowerCase()+"…"+d.id.slice(1)};}
+function delayMs(){return (DB.settings.uploadDelaySec||0)*1000;}
+function delayLabel(){const s=DB.settings.uploadDelaySec;return s===0?"즉시":(s<3600?(s/60)+"분":(s/3600)+"시간");}
+
+/* ── 비가역 적재 플로우: 자격 확정 → 원본 확보·대조 → 업로드 대기(유예) → 업로드 ── */
+function beginFetch(d,by,ev,note){
+  d.appliedLic=ev.lic||null;d.evalWhy=ev.why;if(ev.rules)d.rules=ev.rules;
+  if(d.fileMeta){stageDoc(d,by,(note||"")+" · 원본 기확보("+d.fileMeta.hash+")");return;}
+  transition(d,"fetching",by,"원본 확보 시작"+(d.fetchFail?" (누적 실패 "+d.fetchFail+"회 — 재시도)":"")+(note?" · "+note:""));
+  render();
+  setTimeout(()=>{
+    d.fetchFail=0;d.fileMeta=genMeta(d,d.fileHint||{});
+    audit(d.title,"원본 확보·검증 완료","AI 엔진","해시 "+d.fileMeta.hash+" · 파일 내부 고지 대조 "+(d.fileMeta.inner==="match"?"일치":"불일치")+" · 품질 "+d.fileMeta.quality);
+    if(d.fileMeta.inner!=="match"){d.rules=["R14"];d.evalWhy="원본 내부 고지가 페이지 표기와 불일치 — 재판정 [R14]";transition(d,"review","AI 엔진","파일 내부 고지 불일치 — 재판정 회부 [R14]");render();return;}
+    stageDoc(d,"시스템","");render();
+  },1400);
+}
+function stageDoc(d,by,note){
+  d.stagedTotal=delayMs();d.stagedUntil=Date.now()+d.stagedTotal;
+  transition(d,"staged",by,"업로드 대기 — "+delayLabel()+" (이 구간에서만 취소 가능)"+(note||""));
+}
+function doUpload(d,by){
+  d.spName=fileNameFor(d);d.uploadedAt=nowHM();
+  const folder=DB.settings.catMap[d.cat]||DB.settings.folders[0];
+  DB.uploads.unshift({t:d.uploadedAt,doc:d.title,name:d.spName,hash:d.fileMeta?d.fileMeta.hash:"—",lic:d.appliedLic||"—",folder});
+  transition(d,"uploaded",by,"SharePoint 업로드 확정(비가역) · 파일명 "+d.spName+" · 업로드 원장 기록");
+}
+function cancelStage(d,target,by,note){
+  d.stagedUntil=null;transition(d,target,by,note||"대기 시간 내 업로드 취소");
+}
+/* ── 인시던트: 회수가 불가능하므로, 사후 문제는 추적 가능한 수동 조치로 ── */
+let _inc=0;
+function addIncident(kind,desc,docId,licId){
+  if(DB.incidents.some(i=>i.kind===kind&&i.docId===docId&&i.status!=="resolved"))return null;
+  const inc={id:"INC-"+String(++_inc).padStart(3,"0"),t:nowHM(),kind,desc,docId:docId||null,licId:licId||null,status:"open",log:[{t:nowHM(),msg:"생성 — "+desc}]};
+  DB.incidents.unshift(inc);
+  const doc=docId?DB.docs.find(x=>x.id===docId):null;
+  audit(doc?doc.title:"—","인시던트 생성: "+kind,"시스템(사후 조치)",desc);
+  return inc;
+}
+function scanConflicts(){
+  DB.settings.sources.forEach(s=>{
+    if(!s.licenseId||!s.on)return;
+    const l=DB.licenses.find(x=>x.id===s.licenseId);if(!l)return;
+    const st=licStatus(l).k;
+    if(l.revoked||st==="expired"){s.on=false;audit("—","소스 자동 중지: "+s.name,"시스템(권리 원장)",s.licenseId+" "+(l.revoked?"해지":"만료")+" — 계약 소스의 수집을 중지");}
+  });
+  DB.docs.filter(d=>d.state==="uploaded"&&d.appliedLic).forEach(d=>{
+    const l=DB.licenses.find(x=>x.id===d.appliedLic);if(!l)return;
+    const st=licStatus(l).k;
+    if((l.revoked||st==="expired")&&!l.survival)
+      addIncident("라이선스 소멸 · 잔존 조항 없음",l.id+" "+(l.revoked?"해지":"만료")+" — 기적재분 「"+d.title.slice(0,18)+"…」은 회수 불가, 수동 삭제 필요",d.id,l.id);
+    else if(st==="expiring"&&!l.survival)
+      addIncident("만료 임박 · 잔존 조항 없음",l.id+" 만료 "+licStatus(l).label+" — 갱신 실패 시 기적재분이 위반 상태로 영구화됩니다. 갱신 협상 또는 잔존 조항 추가 확보 필요",d.id,l.id);
+  });
+}
+/* 재평가 — 미결(검토·보류·차단) 문서만 대상. 업로드분은 비가역이므로 재평가 대신 충돌 스캔. */
+function reEvaluateAll(by,trigger){
+  let changed=0;
+  DB.docs.forEach(d=>{
+    if(!["review","held","blocked"].includes(d.state))return;
+    if(d.manual&&d.manual.route==="rejected")return;
+    const ev=evaluate(d);
+    if(ev.route==="uploaded"){changed++;beginFetch(d,by,ev,trigger);}
+    else if(d.state!==ev.route){changed++;d.appliedLic=ev.lic||null;d.evalWhy=ev.why;d.rules=ev.rules||[];transition(d,ev.route,by,ev.why+(trigger?" · "+trigger:""));}
+    else{d.evalWhy=ev.why;d.rules=ev.rules||[];d.appliedLic=ev.lic||null;}
+  });
+  scanConflicts();
+  return changed;
+}
+
+/* ── 초기화: 시드를 상태 머신에 태움 ── */
+let _id=0;
+function makeDoc(s){
+  const d=Object.assign({id:"D"+(++_id),cat:"",state:"pipeline",history:[],manual:null,appliedLic:null,progress:false,via:"자동"},s);
+  d.cat=classifyCat(d);return d;
+}
+/* SEED 순서와 1:1 — 원본 확보 결과 메타 (확보는 업로드 자격 문서와 검토 문서 일부만) */
+const FILE_EXTRA=[
+ {ext:"pdf",size:"1.4MB"},{ext:"pdf",size:"2.1MB"},{ext:"pdf",size:"0.9MB"},{ext:"csv",size:"3.2MB"},
+ {ext:"pdf",size:"4.7MB"},{ext:"pdf",size:"0.8MB",inner:"mismatch"},{ext:"pdf",size:"1.1MB"},{fetchFail:2},
+ {ext:"pdf",size:"6.3MB"},{ext:"pdf",size:"12.8MB"},null,null,null,null
+];
+/* SEED 순서 1:1 — 카탈로그 매칭 결과(코드 매칭 시 호출#5 생략) + 판정 패키지의 약관 수집 건수 */
+const CAT_EXTRA=[
+ {c:"KOGL-1",t:1},{c:"KOGL-1",t:1},{c:"KOGL-1",t:2},{c:"KOGL-1",t:1},
+ {c:null,t:1},{c:null,t:1},{c:"NO-MARKING",t:1},{c:"NO-MARKING",t:0},
+ {c:"PUBLISHER-SUB",t:1},{c:"PUBLISHER-SUB",t:1},{c:"PUBLISHER-SUB",t:1},{c:null,t:1},{c:null,t:1},{c:null,t:0}
+];
+SEED.forEach((s,i)=>{
+  const d=makeDoc(s);DB.docs.push(d);
+  const x=FILE_EXTRA[i],cx=CAT_EXTRA[i]||{};
+  d.catalogId=cx.c||null;d.pkgTerms=(cx.t===undefined?1:cx.t);
+  d.folderConf=88+((i*3)%10); /* [BACKEND] 임베딩 코사인 유사도 — 결정적 계산 (②단계) */
+  d.history.push({t:d.time,from:"—",to:"수집·분류·요약 완료",by:"AI 엔진",note:"AI 분석(관련성·분류·요약 검증) · 신뢰도 "+d.conf+"% · "+LV_META[d.lv].short+" 판정"});
+  d.history.push({t:d.time,from:"검증 준비",to:"판정 실행",by:"시스템(자동 판정)",note:d.catalogId?("카탈로그 "+d.catalogId+" 표준 표기 자동 인식 — 정밀 분석 생략"):"카탈로그 외 표기 — AI 정밀 분석 (근거 문장 검증 통과)"});
+  const ev=evaluate(d);d.appliedLic=ev.lic||null;d.evalWhy=ev.why;d.rules=ev.rules||[];
+  if(ev.route==="uploaded"){
+    d.fileMeta=genMeta(d,x||{});
+    d.history.push({t:d.time,from:"검증",to:"원본 확보·검증 완료",by:"AI 엔진",note:"해시 "+d.fileMeta.hash+" · 내부 고지 대조 일치"});
+    d.history.push({t:d.time,from:"원본 확보",to:"업로드 대기(통과)",by:"시스템",note:""});
+    d.state="uploaded";d.spName=fileNameFor(d);d.uploadedAt=d.time;d.dist=distFor(d);
+    DB.uploads.push({t:d.time,doc:d.title,name:d.spName,hash:d.fileMeta.hash,lic:d.appliedLic||"—",folder:DB.settings.catMap[d.cat]||DB.settings.folders[0]});
+    d.history.push({t:d.time,from:"업로드 대기",to:"SharePoint 업로드(비가역)",by:"시스템",note:"파일명 "+d.spName});
+  }else{
+    d.state=ev.route;
+    if(x&&x.fetchFail)d.fetchFail=x.fetchFail;
+    else if(x&&x.ext&&ev.route==="review")d.fileMeta=genMeta(d,x);
+    d.history.push({t:d.time,from:"검증",to:ROUTE_META[ev.route].label,by:"AI 엔진",note:ev.why});
+  }
+});
+/* 데모: 방금 승인되어 유예 카운트다운 중인 문서 — 75초 뒤 자동 업로드되는 걸 볼 수 있음 */
+(function(){
+  const d=makeDoc({time:nowHM(),type:"기술문서",title:"히트펌프 설치·시운전 실무 가이드",source:"한국에너지공단",url:"https://www.energy.or.kr/guide",
+   lic:"공공누리 제1유형",lv:1,conf:96,
+   summary:"히트펌프 실외기 배치·배관 시공·시운전 점검 항목을 정리한 실무 가이드로, 설치 교육 표준 자료로 적합하다.",
+   evidence:["p.5 점검 체크리스트"],signals:[["라이선스 표기","공공누리 제1유형"],["페이월","없음"]],
+   snapExc:"이 가이드는 공공누리 제1유형에 따라 자유롭게 이용할 수 있습니다. 시운전 전 점검 항목은 5장을 따른다…",snapMark:"공공누리 제1유형",aud:["신입교육"]});
+  d.fileMeta=genMeta(d,{ext:"pdf",size:"3.1MB"});d.folderConf=94;d.evalWhy="L1 자유 이용 — 자동 적재 경로";
+  d.history.push({t:d.time,from:"—",to:"수집~원본 확보 완료",by:"AI 엔진",note:"신뢰도 96% · L1 · 내부 고지 대조 일치"});
+  d.state="staged";d.stagedTotal=75000;d.stagedUntil=Date.now()+75000;
+  d.history.push({t:d.time,from:"원본 확보",to:"업로드 대기",by:"시스템",note:"대기 후 자동 업로드 — 이 구간에서만 취소 가능"});
+  DB.docs.unshift(d);
+})();
+/* 데모: legal_review 게이트(R13) — 카탈로그가 잡았지만 법무 확정 전이라 검토에 묶인 문서.
+   권리 원장 → 표준 카탈로그에서 CC-BY-NC-4.0을 법무 확정하면 자동으로 업로드 대기로 이동한다. */
+(function(){
+  const d=makeDoc({time:nowHM(),type:"기술문서",title:"R-32 냉매 안전 취급 교육 스크립트",source:"OpenHVAC Education Commons",url:"https://openhvac.example/r32-safety",
+   lic:"CC BY-NC 4.0",lv:2,cond:["attribution","nc"],conf:88,
+   summary:"저GWP 냉매 R-32의 가연성(A2L) 특성과 취급·누설 대응 절차를 교육용으로 풀어 쓴 스크립트다.",
+   evidence:["§2 취급 절차","§4 누설 대응"],signals:[["라이선스 표기","CC BY-NC 4.0 배지+링크"],["표기 위치","개별 문서 하단"],["페이월","없음"]],
+   snapExc:"이 자료는 CC BY-NC 4.0에 따라 비영리 목적에 한해 자유롭게 이용할 수 있습니다. R-32는 A2L 등급으로…",snapMark:"CC BY-NC 4.0",aud:["신입교육","설비기술팀"]});
+  d.catalogId="CC-BY-NC-4.0";d.pkgTerms=1;d.folderConf=68; /* R15 데모: 폴더 신뢰도 낮음 */
+  d.fileMeta=genMeta(d,{ext:"pdf",size:"1.8MB"});
+  d.history.push({t:d.time,from:"—",to:"수집~원본 확보 완료",by:"AI 엔진",note:"AI 분석 + 파일 내부 대조 · 신뢰도 88% · 일치"});
+  d.history.push({t:d.time,from:"검증 준비",to:"판정 실행",by:"시스템(자동 판정)",note:"카탈로그 CC-BY-NC-4.0 표준 표기 자동 인식 — 정밀 분석 생략"});
+  const ev=evaluate(d);d.evalWhy=ev.why;d.rules=ev.rules||[];d.state=ev.route;
+  d.history.push({t:d.time,from:"검증",to:ROUTE_META[ev.route].label,by:"시스템(자동 판정)",note:ev.why});
+  DB.docs.unshift(d);
+})();
+audit("—","표준 카탈로그 업데이트 v2026.07 — 신규 15개 항목","시스템(카탈로그)","공공누리 0·AI유형 · CC SA 계열 · ODC/오픈소스 · 보호 제외 저작물 · AI 학습 금지 약관 · 기밀/개인정보/불법 출처");
+audit("—","오늘 첫 동기화 완료 · "+DB.docs.length+"건 수집","시스템","레벨 분포: L1×5 · L2×2 · L3×2 · L4×5 · L5×1");
+scanConflicts(); /* LIC-002 D-9 · 잔존 조항 없음 → 인시던트 자동 생성 */
+DB.incidents.push({id:"INC-000",t:"08:12",kind:"오적재 신고 (처리 완료 예시)",docId:null,licId:null,
+ desc:"구형 카탈로그 v1이 잘못된 폴더로 업로드 — 회수 불가하여 SharePoint·Viva 관리자 수동 삭제로 조치",
+ status:"resolved",log:[{t:"08:12",msg:"신고 접수"},{t:"08:40",msg:"SharePoint·Viva 관리자에 삭제 요청 발송"},{t:"09:05",msg:"삭제 확인 · RAG 재인덱싱 확인 · 종결"}]});
+/* ═════════════════════════════════════════════════════════════════
+   4) 뷰 렌더링
+   ═════════════════════════════════════════════════════════════════ */
+let activeView="queue",logFilter="all",q="",dialog=null,settingsOpen=false,mTab="policy",syncing=false,ledgerMode="lic";
+let reviewDone=0,kbdIdx=-1,auditBy="all",auditQ="",bulkGroups=[];
+
+const LV_TAG={1:"자유",2:"조건부",3:"불명",4:"제한",5:"접근통제"};
+function lvBadge(lv){return '<span class="lv l'+lv+'" title="'+esc(LV_META[lv].name+' — '+LV_META[lv].desc)+'">'+esc(LV_META[lv].short)+' · '+esc(LV_TAG[lv]||"")+'</span>';}
+function confChip(c){const low=c<DB.settings.confidenceThreshold;
+  const col=low?"var(--warn)":(c>=90?"var(--ok)":"var(--navy)");
+  return '<span class="conf'+(low?" low":"")+'" title="AI 판정 신뢰도">'+ic(low?"alert-triangle":"shield-check",11)+c+'%<span class="bar"><i style="width:'+c+'%;background:'+col+'"></i></span></span>';}
+function routeChip(st){const m=ROUTE_META[st];return '<span class="route '+m.tone+'">'+ic(m.icon,11)+m.label+'</span>';}
+function eqChip(d){
+  let mid;if(d.appliedLic)mid='⊕ <b>'+esc(d.appliedLic)+'</b>';
+  else if(d.manual)mid='⊕ <b>관리자 결정</b>';
+  else mid='⊕ 라이선스 없음';
+  return '<span class="eq" title="이용 가능 여부는 항상 기본 레벨과 유효 라이선스의 조합으로 계산됩니다">기본 <b>'+LV_META[d.lv].short+'</b> '+mid+' '+ic("arrow-right",11)+' '+routeChip(d.state)+'</span>';}
+function evidChips(d){if(!d.evidence||!d.evidence.length)return"";
+  return '<span class="chipline">'+d.evidence.map(e=>'<span class="evd" title="요약 근거의 원문 위치">'+ic("link",9)+esc(e)+'</span>').join("")+'</span>';}
+function catChip(d){const e=catEntry(d);
+  return e?'<span class="sig" title="'+esc(RULE_DESC.R02)+'">'+ic("book-key",10)+'카탈로그 <b>'+esc(e.id)+'</b></span>'
+   :'<span class="sig" title="표준 카탈로그에 없어 AI가 표기·약관을 정밀 분석했습니다">'+ic("bot",10)+'카탈로그 외 — AI 정밀 분석</span>';}
+function rulesChip(d){if(!d.rules||!d.rules.length)return"";
+  return '<span class="sig" title="'+esc(d.rules.map(r=>r+" "+(RULE_DESC[r]||"")).join(" / "))+'"><b>규칙</b> '+d.rules.map(esc).join("·")+'</span>';}
+function fileBadge(d){
+  if(d.fileMeta){
+    const mis=d.fileMeta.inner!=="match";
+    return '<span class="sig '+(mis?"risk":"ok")+'">'+ic(mis?"alert-triangle":"check",10)+'<b>원본 확보</b> '+esc(d.fileMeta.size)+' · '+esc(d.fileMeta.hash)+(mis?" · 내부 고지 불일치":" · 내부 대조 일치")+'</span>';
+  }
+  if(d.fetchFail)return '<span class="sig warn">'+ic("alert-triangle",10)+'<b>원본 확보 실패 ×'+d.fetchFail+'</b> 재시도 대기</span>';
+  return '<span class="sig">'+ic("clock",10)+'원본 미확보 — 권리 확보 후 수집</span>';}
+function remainSec(d){return Math.max(0,Math.ceil((d.stagedUntil-Date.now())/1000));}
+function cdFmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function counts(){
+  const c={total:DB.docs.length,uploaded:0,review:0,held:0,blocked:0,rejected:0,staged:0,fetching:0,rag:0,viva:0};
+  DB.docs.forEach(d=>{if(c[d.state]!==undefined)c[d.state]++;
+    if(d.state==="uploaded"&&d.dist){if(d.dist.rag)c.rag++;if(d.dist.viva)c.viva++;}});
+  c.expiring=DB.licenses.filter(l=>licStatus(l).k==="expiring").length;
+  c.incOpen=DB.incidents.filter(i=>i.status!=="resolved").length;
+  return c;}
+
+function render(){
+  const c=counts(),app=document.getElementById("app");
+  const expLic=DB.licenses.filter(l=>licStatus(l).k==="expiring"&&!l.revoked);
+  app.innerHTML=
+  '<div class="hd"><div class="hd-l"><svg class="kd-svg" viewBox="0 0 40 40" aria-label="경동 KD"><rect width="40" height="40" rx="11" fill="#1B2A6B"/><polygon points="9,10 18,10 9,31" fill="#F4731C"/><text x="21" y="27.5" text-anchor="middle" font-family="Pretendard Variable, Pretendard, sans-serif" font-weight="800" font-size="15" fill="#fff" letter-spacing="-.5">KD</text></svg>'+
+    '<div><div class="brand"><b>NAVIEN</b><span>AI AGENT</span></div>'+
+    '<div class="hd-sub">'+esc(dateStr)+' · SharePoint(원본) → 사내 AI RAG · Viva Learning</div></div></div>'+
+    '<div class="hd-r">'+
+      '<span class="live" title="가동 중인 수집 소스 수 — 설정 > 수집 소스에서 관리"><i></i>파이프라인 가동 · 소스 '+DB.settings.sources.filter(s=>s.on).length+'개</span>'+
+      (function(){const n=notifItems().length;return '<button class="btn bellb" onclick="openNotif()" aria-label="알림 '+n+'건 열기" title="알림">'+ic("bell-ring",14)+(n?'<i class="bdg">'+n+'</i>':'')+'</button>';})()+
+      '<button class="btn" onclick="openSettings()">'+ic("settings",14)+'설정</button>'+
+      '<button class="btn primary" onclick="startSync()"'+(syncing?" disabled":"")+'>'+ic("rotate-cw",14,syncing?"spin":"")+'지금 동기화</button>'+
+    '</div></div>'+
+  '<div class="kpis">'+
+    kpi("navy","inbox","오늘 수집",c.total,"전체 로그 보기","log","all")+
+    kpi("ok","database","적재 (비가역)",c.uploaded,"RAG·Viva 동시 배포 — 분리 불가","archive")+
+    kpi("warn","bell-ring","검토 대기",c.review,"사람 판단 필요","queue")+
+    kpi("navy","clock","업로드 대기",c.staged+c.fetching,"확보 중 "+c.fetching+" · 대기 "+c.staged+" — 취소 가능 구간","staging")+
+    kpi("risk","alert-triangle","사후 조치",c.incOpen,"회수 불가분 수동 조치 추적","incidents")+
+  '</div>'+
+  (syncing?'<div class="sync">'+ic("loader-2",15,"spin")+'<span id="syncmsg">파이프라인 가동 중…</span><div class="bar"><span id="syncbar"></span></div></div>':'')+
+  pipeHTML(c)+
+  (expLic.length?'<div class="banner">'+ic("alert-triangle",15)+'<span>라이선스 <b>'+esc(expLic.map(l=>l.id+(l.survival?"":" (잔존 조항 없음)")).join(", "))+'</b> 만료 임박 — 업로드분은 <b>회수가 불가능</b>하므로 갱신(또는 잔존 조항 확보)이 유일한 안전한 경로입니다. <a onclick="ledgerMode=\'lic\';setView(\'ledger\')">권리 원장에서 갱신 →</a></span></div>':'')+
+  '<div class="tabs" role="tablist">'+
+    tabBtn("queue","bell-ring","검토 대기",c.review)+
+    tabBtn("log","inbox","수집 로그",c.total)+
+    tabBtn("staging","clock","업로드 대기",c.staged+c.fetching)+
+    tabBtn("archive","database","적재함",c.uploaded)+
+    tabBtn("hold","lock","보류·차단",c.held+c.blocked)+
+    tabBtn("ledger","book-key","권리 원장",DB.licenses.filter(l=>!l.revoked).length)+
+    tabBtn("incidents","alert-triangle","사후 조치",c.incOpen)+
+    tabBtn("audit","history","감사 로그",DB.audit.length)+
+  '</div><div class="view" id="view"></div>';
+  renderView();
+}
+function kpi(tone,icon,label,num,hint,view,filter){
+  return '<button class="kpi '+tone+(activeView===view?" cur":"")+'" onclick="setView(\''+view+'\''+(filter?',\''+filter+'\'':'')+')" title="'+esc(label)+' 화면으로 이동"><div class="kpi-top"><span class="kpi-ico">'+ic(icon,15)+'</span>'+esc(label)+'<span class="kpi-go">'+ic("arrow-right",12)+'</span></div><div class="kpi-num">'+num+'<small>건</small></div><div class="kpi-hint">'+esc(hint)+'</div></button>';}
+function tabBtn(v,icon,label,cnt){
+  return '<button class="tab'+(activeView===v?" active":"")+'" role="tab" onclick="setView(\''+v+'\')">'+ic(icon,14)+esc(label)+'<span class="cnt">'+cnt+'</span></button>';}
+function pipeHTML(c){
+  const inPipe=DB.docs.filter(d=>d.state==="pipeline");
+  const anyFetch=DB.docs.some(d=>d.state==="fetching"),anyStaged=c.staged>0;
+  const srcN=DB.settings.sources.filter(s=>s.on).length;
+  const nodes=[
+   {t:"서칭·수집",k:"ai",w:"AI",n:c.total,v:"log",h:"가동 중인 소스 "+srcN+"개에서 수집 — 오늘 "+c.total+"건이 이 단계를 거쳤습니다",act:inPipe.some(d=>d.stage==="수집")},
+   {t:"분류·요약·자기검증",k:"ai",w:"AI",n:c.total,v:"log",h:"요약의 각 주장을 원문 위치로 추적해 검증합니다 — 오늘 "+c.total+"건",act:inPipe.some(d=>d.stage==="분류·요약·자기검증")},
+   {t:"검증·레벨 판정",k:"ai",w:"AI",n:c.total,v:"log",h:"표준 카탈로그 우선 대조 · 신뢰도 임계 "+DB.settings.confidenceThreshold+"% — 오늘 "+c.total+"건",act:inPipe.some(d=>d.stage==="검증·레벨 판정")},
+   {t:"원본 확보·내부 대조",k:"ai",w:"AI",n:c.fetching,v:"staging",h:"원본 파일을 저장하고 내부 고지를 페이지 표기와 대조합니다 — 지금 "+c.fetching+"건 진행 중",act:anyFetch},
+   {t:"업로드 대기",k:"hu",w:"사람",n:c.staged,v:"staging",h:"취소할 수 있는 마지막 지점 — 지금 "+c.staged+"건 대기 중",act:anyStaged},
+   {t:"SharePoint 업로드",k:"lock",w:"AI",n:c.uploaded,v:"archive",h:"업로드 후에는 회수할 수 없습니다(비가역) — 오늘 "+c.uploaded+"건 확정",act:false},
+   {t:"RAG·Viva 동시 배포",k:"ai",w:"AI",n:c.uploaded,v:"archive",h:"SharePoint 업로드 순간 자동으로 함께 배포됩니다(분리 불가) — "+c.uploaded+"건",act:false}];
+  return '<div class="pipe">'+nodes.map((nd,i)=>
+    (i?'<span class="pipe-arr">'+ic("arrow-right",12)+'</span>':'')+
+    '<div class="pipe-node'+(nd.act?" active":"")+'" role="button" tabindex="0" onclick="setView(\''+nd.v+'\')" onkeydown="if(event.key===\'Enter\')setView(\''+nd.v+'\')" title="'+esc(nd.h)+' — 클릭하면 해당 화면으로 이동">'+
+     '<span class="pipe-step '+nd.k+'">'+(nd.k==="lock"?ic("lock",10):(i+1))+'</span>'+
+     '<span class="pipe-tt">'+esc(nd.t)+'</span>'+
+     '<span class="who-badge '+(nd.w==="사람"?"hu":"ai")+'">'+esc(nd.w)+'</span>'+
+     '<span class="pipe-cnt">'+nd.n+'</span></div>'
+  ).join("")+'</div>';}
+
+function setView(v,f){activeView=v;if(f)logFilter=f;render();
+  const _v=document.getElementById("view");if(_v)_v.classList.add("vfade");}
+function renderView(){
+  const el=document.getElementById("view");
+  if(activeView==="queue")el.innerHTML=queueHTML();
+  else if(activeView==="log")el.innerHTML=logHTML();
+  else if(activeView==="staging")el.innerHTML=stagingHTML();
+  else if(activeView==="archive")el.innerHTML=archiveHTML();
+  else if(activeView==="hold")el.innerHTML=holdHTML();
+  else if(activeView==="ledger")el.innerHTML=ledgerHTML();
+  else if(activeView==="incidents")el.innerHTML=incidentsHTML();
+  else el.innerHTML=auditHTML();
+}
+
+/* ── 검토 대기: 우선순위 정렬 + 진행감 + 묶음 승인 ── */
+function queuePrio(d){
+  const near=DB.licenses.find(l=>!l.revoked&&licStatus(l).k==="expiring"&&(d.source||"").indexOf(l.scope)>=0);
+  if(near)return{p:0,chip:'<span class="sig risk" title="연관 계약의 만료가 임박 — 권리 협상 판단이 급한 건">'+ic("calendar",10)+'계약 '+esc(licStatus(near).label)+' 연관</span>'};
+  if(d.conf<DB.settings.confidenceThreshold)return{p:1,chip:'<span class="sig warn" title="AI 신뢰도가 임계값 미만 — 사람 판단 우선 대상">'+ic("alert-triangle",10)+'저신뢰 '+d.conf+'%</span>'};
+  return{p:2,chip:'<span class="sig" title="같은 우선순위 안에서는 오래 기다린 순서">'+ic("clock",10)+esc(d.time)+' 수집</span>'};
+}
+function queueHTML(){
+  const list=DB.docs.filter(d=>d.state==="review");
+  const total=reviewDone+list.length;
+  const prog=total?'<div class="qprog">'+ic("check-check",13)+'오늘 검토 <b>'+reviewDone+'</b> / '+total+'건 처리<div class="bar"><i style="width:'+Math.round(reviewDone/Math.max(1,total)*100)+'%"></i></div><span class="kbdhint"><b>J</b><b>K</b> 이동 · <b>A</b> 승인 · <b>H</b> 보류 · <b>R</b> 반려 · <b>Enter</b> 상세</span></div>':'';
+  if(!list.length)return prog+'<div class="empty">'+ic("check-check",22)+'<br>검토 대기 항목을 모두 처리했어요. 승인·반려 사유는 자동 판정 규칙 개선에 축적됩니다.</div>';
+  const ranked=list.map(d=>({d,r:queuePrio(d)})).sort((a,b)=>(a.r.p-b.r.p)||(a.r.p===1?a.d.conf-b.d.conf:(a.d.time<b.d.time?-1:1)));
+  const grp={};
+  list.forEach(d=>{grp["src|"+d.source]=(grp["src|"+d.source]||[]).concat(d.id);if(d.catalogId)grp["cat|"+d.catalogId]=(grp["cat|"+d.catalogId]||[]).concat(d.id);});
+  bulkGroups=Object.keys(grp).filter(k=>grp[k].length>=2).map(k=>({ids:grp[k],label:(k.indexOf("src|")===0?"출처 ":"카탈로그 ")+k.slice(4)}));
+  const bulkbar=bulkGroups.length?'<div class="bulkbar">'+ic("layers",13)+'같은 판단 묶음:'+bulkGroups.map((b,i)=>'<button class="fchip" onclick="openBulk('+i+')" title="한 번의 사유로 묶음 전체를 승인 — 각 건은 개별로 원본 확보·대기(취소 가능)를 거칩니다">'+esc(b.label)+' '+b.ids.length+'건 일괄 승인</button>').join("")+'</div>':'';
+  return prog+bulkbar+'<div class="grid2">'+ranked.map(x=>reviewCard(x.d,x.r.chip)).join("")+'</div>';
+}
+function reviewCard(d,prioChip){
+  const lowConf=d.conf<DB.settings.confidenceThreshold;
+  return '<div class="rcard" data-id="'+d.id+'">'+
+   '<div class="rcard-top"><div style="flex:1;min-width:0"><div class="rcard-title">'+esc(d.title)+'</div>'+
+     '<div class="rcard-src"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+' · '+esc(d.cat)+'</div></div>'+
+     '<span class="rcard-time">'+esc(d.time)+'</span></div>'+
+   '<div class="chipline">'+(prioChip||"")+lvBadge(d.lv)+confChip(d.conf)+'<span class="sig">'+ic("scan-text",10)+esc(d.lic)+'</span></div>'+
+   '<div class="chipline">'+catChip(d)+rulesChip(d)+fileBadge(d)+'</div>'+
+   '<p class="rcard-sum">'+esc(d.summary)+'</p>'+evidChips(d)+
+   '<div class="chipline">'+(d.signals||[]).map(s=>'<span class="sig"><b>'+esc(s[0])+'</b> '+esc(s[1])+'</span>').join("")+'</div>'+
+   '<div class="rcard-why">'+ic(lowConf?"alert-triangle":"bell-ring",13)+'<span>'+esc(d.evalWhy||"")+'</span></div>'+
+   '<div class="rcard-act">'+ic("arrow-right",13)+'<span><b>승인 후 흐름:</b> 원본 확보·내부 대조 → 업로드 대기('+delayLabel()+', 취소 가능) → SharePoint 업로드(비가역).</span></div>'+
+   (d.contact?'<div class="contact">'+ic("mail",12)+'권리 문의처 <b>'+esc(d.contact)+'</b><button class="rbtn" onclick="openMail(\''+d.id+'\')">'+ic("mail",12)+'문의 초안</button></div>':'')+
+   (d.aud&&d.aud.length?'<div class="who">'+ic("user",11)+'담당 '+d.aud.map(esc).join(" · ")+'</div>':'')+
+   '<div class="rcard-btns">'+
+     '<button class="rbtn" onclick="openDetail(\''+d.id+'\')">'+ic("camera",13)+' 근거 스냅샷</button>'+
+     (d.fetchFail?'<button class="rbtn" onclick="openManualUp(\''+d.id+'\')" title="자동 확보가 실패한 원본을 사람이 정당한 권한으로 직접 등록합니다">'+ic("file-text",13)+' 원본 직접 업로드</button>':'')+
+     '<button class="rbtn ok" onclick="openDecision(\''+d.id+'\',\'approve\')">'+ic("check",13)+' 승인</button>'+
+     '<button class="rbtn" onclick="holdDoc(\''+d.id+'\')">'+ic("lock",13)+' 보류</button>'+
+     '<button class="rbtn risk" onclick="openDecision(\''+d.id+'\',\'reject\')">'+ic("x",13)+' 반려</button>'+
+   '</div></div>';
+}
+
+/* ── 수집 로그 ── */
+function logHTML(){
+  const filters=[["all","전체"],["uploaded","적재"],["wait","확보·대기"],["review","검토"],["held","보류"],["blocked","차단"],["rejected","반려"]];
+  let list=DB.docs.slice().sort((a,b)=>a.time<b.time?1:-1);
+  if(logFilter==="wait")list=list.filter(d=>d.state==="staged"||d.state==="fetching");
+  else if(logFilter!=="all")list=list.filter(d=>d.state===logFilter);
+  if(q)list=list.filter(d=>((d.title+" "+d.source).toLowerCase().indexOf(q.toLowerCase())>=0));
+  return '<div class="toolbar">'+filters.map(f=>'<button class="fchip'+(logFilter===f[0]?" active":"")+'" onclick="setLogFilter(\''+f[0]+'\')">'+f[1]+'</button>').join("")+
+   '<input class="searchbox" placeholder="제목·출처 검색" value="'+esc(q)+'" oninput="setQ(this.value)" /></div>'+
+   (list.length?'<div class="feed">'+list.map(d=>{
+     const pipe=d.state==="pipeline",fetch=d.state==="fetching",stg=d.state==="staged";
+     return '<div class="fitem" onclick="openDetail(\''+d.id+'\')"><span class="fitem-time">'+esc(d.time)+'</span>'+
+      '<div class="fitem-mid"><div class="fitem-title">'+esc(d.title)+'</div>'+
+      '<div class="fitem-meta"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+'</div></div>'+
+      '<div class="fitem-r">'+
+       (pipe?'<span class="stagechip">'+ic("loader-2",11,"spin")+esc(d.stage||"수집")+' 중</span>'
+        :fetch?'<span class="stagechip">'+ic("loader-2",11,"spin")+'원본 확보 중</span>'
+        :stg?'<span class="stagechip">'+ic("clock",11)+'업로드까지 '+cdFmt(remainSec(d))+'</span>'
+        :lvBadge(d.lv)+confChip(d.conf)+routeChip(d.state))+'</div></div>';
+   }).join("")+'</div>':'<div class="empty">해당하는 항목이 없습니다.</div>');
+}
+function setLogFilter(f){logFilter=f;renderView();}
+function setQ(v){q=v;renderView();
+  const nb=document.getElementById("view").querySelector(".searchbox");if(nb){nb.focus();nb.setSelectionRange(nb.value.length,nb.value.length);}}
+
+/* ── 업로드 대기 (취소 가능한 마지막 구간) ── */
+function stagingHTML(){
+  const fetching=DB.docs.filter(d=>d.state==="fetching");
+  const staged=DB.docs.filter(d=>d.state==="staged").sort((a,b)=>a.stagedUntil-b.stagedUntil);
+  if(!fetching.length&&!staged.length)return '<div class="empty">업로드 대기 중인 자료가 없습니다.<br><span style="font-size:11.5px">승인·자동 적재분은 원본 확보 → 대기('+delayLabel()+')를 거쳐 여기 나타납니다.</span></div>';
+  let html='<div class="warnbox" style="margin-bottom:13px">'+ic("alert-triangle",14)+' 이 화면이 <b>취소 가능한 마지막 지점</b>입니다. 대기가 끝나면 SharePoint에 업로드되고, 그 즉시 RAG·Viva Learning으로 전파되어 <b>삭제·회수할 수 없습니다.</b></div>';
+  html+='<div class="grid2">'+fetching.map(d=>
+   '<div class="rcard"><div class="rcard-top"><div style="flex:1"><div class="rcard-title">'+esc(d.title)+'</div>'+
+    '<div class="rcard-src"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+'</div></div>'+routeChip(d.state)+'</div>'+
+    '<div class="chipline">'+lvBadge(d.lv)+eqChip(d)+'</div>'+
+    '<div class="rcard-why">'+ic("loader-2",13,"spin")+'<span>원본 확보·내부 고지 대조 중 — 원본 저장이 확인돼야 업로드 대기로 이동합니다.</span></div></div>'
+  ).join("")+staged.map(d=>{
+    const r=remainSec(d),folder=DB.settings.catMap[d.cat]||DB.settings.folders[0];
+    const tot=Math.max(1,Math.round((d.stagedTotal||delayMs()||60000)/1000)),pct=Math.max(0,Math.min(100,Math.round(r/tot*100)));
+    return '<div class="rcard" data-id="'+d.id+'">'+
+     '<div class="rcard-top"><div style="flex:1;min-width:0"><div class="rcard-title">'+esc(d.title)+'</div>'+
+       '<div class="rcard-src"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+'</div></div>'+
+       '<span class="cd" aria-label="업로드까지 남은 시간">'+cdFmt(r)+'</span></div>'+
+     '<div class="cdbar" aria-hidden="true"><i style="width:'+pct+'%"></i></div>'+
+     '<div class="chipline">'+lvBadge(d.lv)+eqChip(d)+'</div>'+
+     '<div class="chipline">'+fileBadge(d)+((d.folderConf||100)<DB.settings.folderThreshold?'<span class="sig warn" title="R15 — 폴더 배치는 사실상 비가역이라 낮은 신뢰도는 사람 확인을 요구합니다">'+ic("alert-triangle",10)+'폴더 신뢰도 '+d.folderConf+'% < '+DB.settings.folderThreshold+'% — 자동 업로드 보류</span>':'')+'</div>'+
+     '<div class="fn">'+ic("file-text",10)+' 업로드 파일명: '+esc(fileNameFor(d))+'</div>'+
+     '<div class="acard-path">'+ic("folder",11)+'/SharePoint/'+esc(folder.replace(/\s*>\s*/g,"/"))+'/ → RAG·Viva 동시 배포</div>'+
+     '<div class="rcard-btns">'+
+       '<button class="rbtn ok" onclick="openUploadConfirm(\''+d.id+'\')">'+ic("check",13)+' 지금 업로드 (체크리스트)</button>'+
+       '<button class="rbtn risk" onclick="cancelStageUI(\''+d.id+'\')">'+ic("x",13)+' 취소 → 검토로</button>'+
+     '</div></div>';
+  }).join("")+'</div>';
+  return html;
+}
+function cancelStageUI(id){const d=DB.docs.find(x=>x.id===id);if(!d)return;
+  cancelStage(d,"review","관리자","대기 시간 내 업로드 취소 — 재검토");toastMsg("업로드를 취소했습니다 — 검토 대기로 이동");render();}
+
+/* ── 적재함 (SSOT · 비가역) ── */
+function archiveHTML(){
+  const list=DB.docs.filter(d=>d.state==="uploaded").sort((a,b)=>a.time<b.time?1:-1);
+  if(!list.length)return '<div class="empty">아직 적재된 자료가 없습니다.</div>';
+  return '<div style="font-size:12px;color:var(--t3);margin-bottom:11px">'+ic("lock",11)+' 업로드분은 회수할 수 없습니다. 문제가 있으면 <b>문제 신고</b>로 사후 조치 대장에 등록하세요. 파일명의 [KD-ID·레벨·LIC] 코드로 권리 원장·업로드 원장을 역추적합니다.</div>'+
+   '<div class="feed">'+list.map(d=>{
+    const lic=d.appliedLic?DB.licenses.find(l=>l.id===d.appliedLic):null;
+    const folder=DB.settings.catMap[d.cat]||DB.settings.folders[0];
+    return '<div class="fitem" onclick="openDetail(\''+d.id+'\')"><span class="fitem-time">'+esc(d.uploadedAt||d.time)+'</span>'+
+     '<div class="fitem-mid"><div class="fitem-title">'+esc(d.title)+'</div>'+
+     '<div class="fn" style="margin-top:3px">'+esc(d.spName||fileNameFor(d))+'</div>'+
+     '<div class="acard-path" style="margin-top:3px">'+ic("folder",11)+'/SharePoint/'+esc(folder.replace(/\s*>\s*/g,"/"))+'/'+
+     (lic?' <span class="oblig">'+ic("book-key",10)+esc(lic.id)+(lic.survival?" · 잔존 조항":" · 잔존 조항 없음")+'</span>':'')+
+     (d.manual?' <span class="oblig warn">관리자 승인</span>':'')+
+     '</div></div>'+
+     '<div class="fitem-r">'+lvBadge(d.lv)+
+     '<span class="dist sp">'+ic("database",9)+'SP</span><span class="dist on">'+ic("bot",9)+'RAG</span>'+
+     '<span class="dist on">'+ic("check",9)+'Viva</span>'+
+     '<button class="rbtn risk" onclick="event.stopPropagation();openIncForm(\''+d.id+'\')">'+ic("alert-triangle",12)+'문제 신고</button></div></div>';
+  }).join("")+'</div>';
+}
+
+/* ── 보류·차단함 ── */
+function holdHTML(){
+  const list=DB.docs.filter(d=>d.state==="held"||d.state==="blocked").sort((a,b)=>(a.state===b.state)?0:(a.state==="held"?-1:1));
+  if(!list.length)return '<div class="empty">보류·차단 중인 자료가 없습니다.</div>';
+  return '<div class="grid2">'+list.map(d=>{
+    const blocked=d.state==="blocked";
+    return '<div class="rcard" data-id="'+d.id+'">'+
+     '<div class="rcard-top"><div style="flex:1;min-width:0"><div class="rcard-title">'+esc(d.title)+'</div>'+
+       '<div class="rcard-src"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+'</div></div>'+routeChip(d.state)+'</div>'+
+     '<div class="chipline">'+lvBadge(d.lv)+'<span class="sig">'+ic("scan-text",10)+esc(d.lic)+'</span></div>'+
+     '<div class="chipline">'+catChip(d)+rulesChip(d)+'</div>'+
+     eqChip(d)+
+     '<div class="rcard-why'+(blocked?" r5":" r4")+'">'+ic(blocked?"shield-alert":"lock",13)+'<span>'+esc(d.evalWhy||"")+'</span></div>'+
+     (blocked?'':'<div class="rcard-act">'+ic("arrow-right",13)+'<span><b>다음 행동:</b> 권리 원장에 라이선스를 등록하면 자동 재평가 → 원본 확보 → 업로드 대기로 이동합니다.</span></div>')+
+     (d.contact?'<div class="contact">'+ic("mail",12)+'권리 문의처 <b>'+esc(d.contact)+'</b><button class="rbtn" onclick="openMail(\''+d.id+'\')">'+ic("mail",12)+'문의 초안</button></div>':'')+
+     (blocked?'':'<div class="hold-prog">'+ic(d.progress?"loader-2":"clock",12,d.progress?"spin":"")+'라이선스 확보 진행'+
+       '<button class="sw'+(d.progress?" on":"")+'" onclick="toggleProg(\''+d.id+'\')" aria-label="확보 진행 여부"></button></div>')+
+     '<div class="rcard-btns">'+
+       '<button class="rbtn" onclick="openDetail(\''+d.id+'\')">'+ic("camera",13)+' 근거 스냅샷</button>'+
+       (blocked?'':'<button class="rbtn ok" onclick="openLicForm(\''+esc(d.source)+'\')">'+ic("book-key",13)+' 라이선스 등록</button>'+
+       '<button class="rbtn risk" onclick="openDecision(\''+d.id+'\',\'reject\')">'+ic("x",13)+' 반려</button>')+
+     '</div></div>';
+  }).join("")+'</div>';
+}
+function toggleProg(id){const d=DB.docs.find(x=>x.id===id);if(d){d.progress=!d.progress;
+  audit(d.title,"확보 진행 "+(d.progress?"시작":"중지"),"관리자","");renderView();}}
+function holdDoc(id){const d=DB.docs.find(x=>x.id===id);if(!d)return;
+  reviewDone++;kbdIdx=-1;
+  transition(d,"held","관리자","검토 대기에서 보류 처리 — 권리 확보 대기");toastMsg("보류함으로 이동했습니다");render();}
+
+/* ── 권리 원장 ── */
+function ledgerHTML(){
+  const active=DB.licenses.filter(l=>!l.revoked),revoked=DB.licenses.filter(l=>l.revoked);
+  const modeBar='<div class="toolbar">'+
+   '<button class="fchip'+(ledgerMode==="lic"?" active":"")+'" onclick="ledgerMode=\'lic\';renderView()">계약 원장 '+active.length+'</button>'+
+   '<button class="fchip'+(ledgerMode==="cat"?" active":"")+'" onclick="ledgerMode=\'cat\';renderView()">표준 카탈로그 '+CATALOG.length+'</button></div>';
+  if(ledgerMode==="cat")return modeBar+catalogHTML();
+  let html=modeBar+'<div class="toolbar"><span style="font-size:12.5px;color:var(--t2);line-height:1.6">라이선스는 문서와 별개로 관리되는 살아 있는 권리 기록입니다. <b>업로드는 비가역</b>이므로: 만료·해지되어도 기적재분은 회수되지 않습니다 — <b>잔존 조항(survival clause)</b>이 없으면 만료 시 인시던트가 생성됩니다. 등록 시 보류함이 자동 재평가됩니다.</span>'+
+   '<button class="btn primary sm" style="margin-left:auto" onclick="openLicForm()">'+ic("plus",13)+'라이선스 등록</button></div>';
+  html+='<div class="lic-grid">'+active.map(l=>{
+    const st=licStatus(l);
+    const docs=DB.docs.filter(d=>d.appliedLic===l.id&&(d.state==="uploaded"||d.state==="staged"||d.state==="fetching"));
+    return '<div class="lic-card"><div class="lic-h"><div><div class="lic-id">'+esc(l.id)+'</div><div class="lic-name">'+esc(l.name)+'</div></div>'+
+     '<span class="dday '+(st.k==="active"?"okd":st.k==="expiring"?"warnd":"exp")+'">'+esc(st.label)+'</span></div>'+
+     '<div class="lic-row"><b>범위</b><span>출처 “'+esc(l.scope)+'” 매칭 문서 전체</span></div>'+
+     '<div class="lic-row"><b>허용 용도</b><span class="chipline">'+["internal","ai","education","redistribute","commercial"].filter(k=>l.uses[k]).map(k=>'<span class="sig">'+({internal:"사내 열람",ai:"AI 인덱싱(RAG)",education:"교육 게시(Viva)",redistribute:"재배포",commercial:"상업적 이용"})[k]+'</span>').join("")+((l.uses.ai===false||!l.uses.education)?'<span class="dist off" title="적재는 SharePoint·RAG·Viva 동시 업로드(분리 불가)라서, 세 용도를 전부 커버하지 못하는 라이선스로는 적재할 수 없습니다">번들 미충족 — 적재 불가</span>':'')+'</span></div>'+
+     '<div class="lic-row"><b>기간</b><span>'+esc(l.start)+' ~ '+esc(l.end)+'</span></div>'+
+     '<div class="lic-row"><b>잔존 조항</b><span>'+(l.survival?'<span class="sig ok">'+ic("check",10)+'포함 — 계약 종료 후 기적재분 유지 가능</span>':'<span class="dist off">'+ic("alert-triangle",10)+'없음 — 만료 시 기적재분이 위반 리스크로 영구화</span>')+'</span></div>'+
+     '<div class="lic-row"><b>의무</b><span>'+esc(l.obligations)+'</span></div>'+
+     '<div class="lic-row"><b>근거</b><span>'+ic("file-text",11)+' '+esc(l.file)+' · 문의 '+esc(l.contact)+'</span></div>'+
+     '<div class="lic-docs">'+ic("database",12)+' 이 라이선스 기반 적재·대기 문서 <b>'+docs.length+'건</b>'+(docs.length?' — '+esc(docs[0].title.slice(0,22))+(docs.length>1?" 외":""):"")+'</div>'+
+     '<div class="rcard-btns"><button class="rbtn risk" onclick="revokeLic(\''+l.id+'\')">'+ic("x",13)+' 해지 — 신규 적재 중단'+(l.survival?'':' · 기적재분 인시던트')+'</button></div></div>';
+  }).join("")+'</div>';
+  if(revoked.length)html+='<div style="margin-top:14px;font-size:12px;color:var(--t3)">해지됨: '+revoked.map(l=>esc(l.id)).join(", ")+' — 이력은 감사 로그·업로드 원장에 보존됩니다.</div>';
+  return html;
+}
+/* 표준 카탈로그 — 라이선스 '종류'의 사전. 코드 매칭이 여기 대조되고, legal_review 확정이 여기서 일어난다. */
+function catalogHTML(){
+  const V={a:'<span class="sig ok">'+ic("check",10)+'허용</span>',
+   r:'<span class="sig warn">'+ic("alert-triangle",10)+'법무 확정 대기</span>',
+   d:'<span class="dist off">계약 필요</span>'};
+  const card=c=>{
+    const pending=!c.legalRef&&(c.uses.ai==="r"||c.uses.edu==="r");
+    return '<div class="lic-card"><div class="lic-h"><div><div class="lic-id">'+esc(c.id)+' <span style="font-weight:600;color:var(--t3)">· '+esc(c.family)+'</span></div><div class="lic-name">'+esc(c.name)+'</div></div>'+lvBadge(c.lv)+'</div>'+
+     (c.cond.length?'<div class="lic-row"><b>조건</b><span class="chipline">'+c.cond.map(x=>'<span class="sig">'+esc(x)+'</span>').join("")+'</span></div>':'')+
+     (c.lv===5?'<div class="lic-row"><b>용도 판정</b><span><span class="dist off">'+ic("shield-alert",10)+'없음 — 수집 단계에서 차단</span></span></div>'
+      :'<div class="lic-row"><b>사내 열람</b><span>'+V[c.uses.view]+'</span></div>'+
+       '<div class="lic-row"><b>AI 인덱싱</b><span>'+V[c.uses.ai]+'</span></div>'+
+       '<div class="lic-row"><b>Viva 교육</b><span>'+V[c.uses.edu]+'</span></div>')+
+     '<div class="lic-row"><b>법무 확정</b><span>'+(c.legalRef?ic("check",11)+' '+esc(c.legalRef):'<span style="color:var(--t3)">미등록 — 보수 기본값으로 동작</span>')+'</span></div>'+
+     '<div class="lic-row"><b>비고</b><span>'+esc(c.note)+'</span></div>'+
+     (pending?'<div class="rcard-btns"><button class="rbtn ok" onclick="legalConfirm(\''+c.id+'\')">'+ic("check",13)+' 법무 의견서 등록 — 허용 확정·재평가</button></div>':'')+
+    '</div>';
+  };
+  return '<div style="font-size:12px;color:var(--t3);margin:2px 0 4px;line-height:1.6">계약 원장이 <b>개별 계약</b>의 장부라면, 카탈로그는 라이선스 <b>종류</b>의 사전입니다. 표준 표기는 여기 대조해 <b>AI 분석 없이</b> 즉시 판정하고, <span style="color:var(--warn);font-weight:700">법무 확정 대기</span> 용도가 있으면 자동 적재가 금지됩니다(R13). 확정은 소급 재평가를 일으키고, 사람이 해석한 미지의 약관은 새 항목으로 축적됩니다. <span class="tpill">'+ic("lock",9)+'표준 카탈로그 v2026.07 — 서비스 업데이트로 관리</span></div>'+
+   [1,2,3,4,5].map(lv=>{
+    const items=CATALOG.filter(c=>c.lv===lv);if(!items.length)return"";
+    return '<div class="lvgroup-h" style="margin:12px 0 9px">'+lvBadge(lv)+'<span class="lvd">'+esc(LV_META[lv].desc)+' — '+esc(LV_META[lv].act)+'</span><span class="lvcnt">'+items.length+'개</span></div>'+
+     '<div class="lic-grid">'+items.map(card).join("")+'</div>';
+   }).join("");
+}
+function revokeLic(id){
+  const l=DB.licenses.find(x=>x.id===id);if(!l)return;
+  const up=DB.docs.filter(d=>d.appliedLic===l.id&&d.state==="uploaded").length;
+  const stg=DB.docs.filter(d=>d.appliedLic===l.id&&(d.state==="staged"||d.state==="fetching")).length;
+  confirmDlg("라이선스 해지 — 회수는 불가능합니다",
+   "<b>"+esc(l.id)+" · "+esc(l.name)+"</b>를 해지합니다.<br><br>"+
+   "· 신규 적재는 즉시 중단됩니다.<br>"+
+   "· 업로드 대기 중 "+stg+"건은 아직 취소 가능해 <b>보류로 복귀</b>합니다.<br>"+
+   "· 이미 업로드된 "+up+"건은 <b>회수할 수 없으며</b>"+(l.survival?" 잔존 조항으로 유지가 허용됩니다.":" 잔존 조항이 없어 <b>인시던트가 생성</b>됩니다 — 수동 삭제 조치가 필요합니다.")+"<br><br>계속할까요?",
+   function(){
+    l.revoked=true;audit("—","라이선스 해지: "+l.id,"관리자","권리 원장에서 해지");
+    DB.settings.sources.forEach(s=>{if(s.licenseId===l.id&&s.on){s.on=false;audit("—","소스 자동 중지: "+s.name,"시스템(권리 원장)",l.id+" 해지 — 계약 소스의 수집을 중지");}});
+    DB.docs.filter(d=>d.appliedLic===l.id&&d.state==="staged").forEach(d=>cancelStage(d,"held","시스템(권리 원장)","라이선스 해지로 대기 중 업로드 취소 — 보류 복귀"));
+    const n=reEvaluateAll("시스템(권리 원장)","라이선스 "+l.id+" 해지 재평가");
+    toastMsg("해지 완료 — 미결 "+n+"건 재평가"+(l.survival?"":" · 기적재분 인시던트 생성"));render();
+  });
+}
+
+/* ── 사후 조치 대장 ── */
+function incidentsHTML(){
+  if(!DB.incidents.length)return '<div class="empty">사후 조치가 필요한 항목이 없습니다.</div>';
+  const stMeta={open:["조치 필요","warnd"],requested:["삭제 요청됨","okd"],resolved:["조치 완료","exp"]};
+  return '<div style="font-size:12px;color:var(--t3);margin-bottom:11px">시스템은 업로드분을 지울 수 없으므로, 문제 발생분은 여기서 <b>SharePoint·Viva 관리자 대상 수동 조치</b>로 추적합니다.</div>'+
+   '<div class="lic-grid">'+DB.incidents.map(inc=>{
+    const doc=inc.docId?DB.docs.find(d=>d.id===inc.docId):null;
+    const m=stMeta[inc.status];
+    return '<div class="lic-card"><div class="lic-h"><div><div class="lic-id">'+esc(inc.id)+' · '+esc(inc.t)+'</div><div class="lic-name">'+esc(inc.kind)+'</div></div>'+
+     '<span class="dday '+m[1]+'">'+m[0]+'</span></div>'+
+     (doc?'<div class="lic-row"><b>문서</b><span>'+esc(doc.title)+' <span class="fn">'+esc(doc.spName||"")+'</span></span></div>':'')+
+     '<div class="lic-row"><b>내용</b><span>'+esc(inc.desc)+'</span></div>'+
+     '<div class="lic-row"><b>이력</b><span>'+inc.log.map(g=>esc(g.t)+" "+esc(g.msg)).join("<br>")+'</span></div>'+
+     '<div class="rcard-btns">'+
+      (inc.status==="open"?'<button class="rbtn ok" onclick="incStep(\''+inc.id+'\',\'requested\')">'+ic("mail",13)+' SP·Viva 관리자에 삭제 요청</button>':'')+
+      (inc.status==="requested"?'<button class="rbtn ok" onclick="incStep(\''+inc.id+'\',\'resolved\')">'+ic("check-check",13)+' 조치 확인 · 종결</button>':'')+
+     '</div></div>';
+  }).join("")+'</div>';
+}
+function incStep(id,to){
+  const inc=DB.incidents.find(i=>i.id===id);if(!inc)return;
+  inc.status=to;
+  const msg=to==="requested"?"SharePoint·Viva 관리자에 수동 삭제 요청 발송":"삭제·재인덱싱 확인 — 종결";
+  inc.log.push({t:nowHM(),msg});
+  audit(inc.docId?(DB.docs.find(d=>d.id===inc.docId)||{}).title||"—":"—","인시던트 "+inc.id+": "+msg,"관리자","");
+  toastMsg(msg);render();
+}
+
+/* ── 감사 로그 ── */
+function auditByCls(by){return by==="관리자"?"hu":(String(by).indexOf("시스템")===0?"sys":"ai");}
+function auditHTML(){
+  if(!DB.audit.length)return '<div class="empty">기록이 없습니다.</div>';
+  const F=[["all","전체"],["ai","AI"],["hu","사람"],["sys","시스템"]];
+  let list=DB.audit.filter(a=>auditBy==="all"||auditByCls(a.by)===auditBy);
+  if(auditQ)list=list.filter(a=>(((a.doc||"")+" "+a.move+" "+(a.note||"")).toLowerCase().indexOf(auditQ.toLowerCase())>=0));
+  return '<div class="toolbar">'+F.map(f=>'<button class="fchip'+(auditBy===f[0]?" active":"")+'" onclick="setAuditBy(\''+f[0]+'\')">'+f[1]+'</button>').join("")+
+   '<input class="searchbox" placeholder="문서·내용 검색" value="'+esc(auditQ)+'" oninput="setAuditQ(this.value)" /></div>'+
+   '<div style="font-size:12px;color:var(--t3);margin-bottom:10px">모든 상태 전이·정책 변경·라이선스·업로드·인시던트 이벤트가 근거와 함께 남습니다. 업로드 원장 '+DB.uploads.length+'건 포함 — 기록은 수정·삭제되지 않습니다.</div>'+
+   (list.length?'<div class="audit">'+list.map(a=>{
+    const byCls=auditByCls(a.by);
+    return '<div class="a-item"><span class="a-time">'+esc(a.t)+'</span><span class="a-body">'+(a.doc&&a.doc!=="—"?'<b>'+esc(a.doc)+'</b> — ':'')+esc(a.move)+(a.note?' <span style="color:var(--t3)">· '+esc(a.note)+'</span>':'')+'</span><span class="a-by '+byCls+'">'+esc(a.by)+'</span></div>';
+  }).join("")+'</div>':'<div class="empty">해당하는 기록이 없습니다.</div>');
+}
+function setAuditBy(v){auditBy=v;renderView();}
+function setAuditQ(v){auditQ=v;renderView();
+  const nb=document.getElementById("view").querySelector(".searchbox");if(nb){nb.focus();nb.setSelectionRange(nb.value.length,nb.value.length);}}
+/* ═════════════════════════════════════════════════════════════════
+   5) 다이얼로그 — 상세, 결정 사유, 업로드 체크리스트, 문제 신고, 문의 초안, 라이선스 등록, 확인
+   ═════════════════════════════════════════════════════════════════ */
+function renderDialog(){
+  const r=document.getElementById("dlgroot");
+  if(!dialog){r.innerHTML="";return;}
+  let inner="";
+  if(dialog.type==="detail")inner=detailDlg();
+  else if(dialog.type==="decision")inner=decisionDlg();
+  else if(dialog.type==="upconfirm")inner=upconfirmDlg();
+  else if(dialog.type==="incform")inner=incformDlg();
+  else if(dialog.type==="mail")inner=mailDlg();
+  else if(dialog.type==="lic")inner=licDlg();
+  else if(dialog.type==="src")inner=srcDlg();
+  else if(dialog.type==="notif")inner=notifDlg();
+  else if(dialog.type==="bulk")inner=bulkDlg();
+  else if(dialog.type==="manup")inner=manupDlg();
+  else if(dialog.type==="confirm")inner=confirmHTML();
+  r.innerHTML='<div class="mbg" onclick="if(event.target===this)closeDlg()">'+inner+'</div>';
+  const fe=r.querySelector('.modal-body input:not([type=checkbox]):not([type=file]),.modal-body textarea,.modal-body select');
+  if(fe&&fe.focus)try{fe.focus();}catch(e){}
+}
+function closeDlg(){dialog=null;renderDialog();}
+function openDetail(id){const d=DB.docs.find(x=>x.id===id);if(!d||d.state==="pipeline")return;dialog={type:"detail",id};renderDialog();}
+function detailDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.id);
+  return '<div class="modal" role="dialog" aria-modal="true"><div class="modal-h">'+ic("camera",16)+'문서 상세 · 판정 근거<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body">'+
+   '<div><div class="rcard-title" style="font-size:15px">'+esc(d.title)+'</div>'+
+    '<div class="rcard-src" style="margin-top:5px"><span class="tpill">'+esc(d.type)+'</span>'+esc(d.source)+' · '+esc(d.cat)+' · <a href="'+esc(d.url)+'" onclick="return false" style="color:var(--navy)">'+esc(d.url)+'</a></div></div>'+
+   '<div class="chipline">'+lvBadge(d.lv)+confChip(d.conf)+eqChip(d)+'</div>'+
+   traceGroup(d)+fileGroup(d)+
+   (d.state==="uploaded"?distGroup(d):"")+
+   '<div class="setgrp"><div class="setgrp-t">'+ic("file-text",13)+' AI 요약 + 원문 근거</div>'+
+    '<p class="rcard-sum" style="font-size:13px">'+esc(d.summary)+'</p>'+evidChips(d)+
+    '<div class="setgrp-d">요약의 각 주장이 원문 어느 위치에서 왔는지 추적됩니다 — 자기검증 단계에서 원문 대조를 통과한 요약만 이 화면에 도달합니다.</div></div>'+
+   '<div class="setgrp"><div class="setgrp-t">'+ic("scan-text",13)+' AI가 추출한 저작권 신호</div>'+
+    '<div class="chipline">'+(d.signals||[]).map(s=>'<span class="sig"><b>'+esc(s[0])+'</b> '+esc(s[1])+'</span>').join("")+'</div></div>'+
+   '<div class="setgrp"><div class="setgrp-t">'+ic("camera",13)+' 근거 스냅샷 <span class="hint-back">판정 시점의 원문 캡처</span></div>'+
+    '<div class="snap"><div class="snap-h">'+ic("clock",11)+'수집 '+esc(d.time)+' · '+ic("link",11)+esc(d.url)+'</div>'+
+    '<div class="snap-b">'+snapHTML(d)+'</div></div></div>'+
+   '<div class="setgrp"><div class="setgrp-t">'+ic("history",13)+' 상태 전이 이력</div>'+
+    '<div class="hist">'+d.history.map(h=>'<div class="h-item"><span class="ht">'+esc(h.t)+' · '+esc(h.by)+'</span><br><b>'+esc(String(h.from))+' → '+esc(String(h.to))+'</b>'+(h.note?' — '+esc(h.note):'')+'</div>').join("")+'</div></div>'+
+  '</div><div class="modal-f"><span class="note"></span><button class="btn" onclick="closeDlg()">닫기</button></div></div>';
+}
+function traceGroup(d){
+  const e=catEntry(d);
+  const steps=["관련성 판정","분류","요약·근거 검증"].concat(e?[]:["표기·약관 정밀 분석"]).concat(d.fileMeta?["파일 내부 대조"]:[]).concat(d.state==="staged"?["리스크 브리핑"]:[]);
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("scale",13)+' 판정 근거 <span class="hint-back">무엇이 이 판정을 만들었나</span></div>'+
+   '<div class="mirror">'+
+    '<div class="mir-row"><b>카탈로그</b><span class="mir-sys">'+(e?esc(e.id)+" — 표준 표기 자동 인식 (AI 분석 생략)":"카탈로그 외 — AI 정밀 분석 (근거 문장 원문 검증 통과)")+'</span></div>'+
+    '<div class="mir-row"><b>적용 규칙</b><span class="mir-sys">'+((d.rules&&d.rules.length)?d.rules.map(r=>esc(r)+" ("+esc(RULE_DESC[r]||"")+")").join(" · "):"사람 결정 — 룰 우회 기록")+'</span></div>'+
+    '<div class="mir-row"><b>판정 자료</b><span class="mir-sys">본문 ✓ · 약관 페이지 '+(d.pkgTerms||0)+'건'+((d.pkgTerms||0)===0?" — 미수집 (신뢰도 −15)":" ✓")+' · 스냅샷 ✓ · 조직 정책 반영</span></div>'+
+    '<div class="mir-row"><b>AI 분석</b><span class="mir-sys">'+steps.join(" · ")+' — 제공된 원문만 분석 (외부 검색 없음)</span></div>'+
+   '</div></div>';
+}
+function fileGroup(d){
+  if(!d.fileMeta&&!d.fetchFail)return "";
+  let body;
+  if(d.fileMeta){
+    const mis=d.fileMeta.inner!=="match";
+    body='<div class="mirror">'+
+     '<div class="mir-row"><b>원본 파일</b><span class="mir-sys">'+esc(d.spName||fileNameFor(d))+' · '+esc(d.fileMeta.size)+'</span></div>'+
+     '<div class="mir-row"><b>무결성</b><span class="mir-sys">'+esc(d.fileMeta.hash)+' — 불변 아카이브 보관(WORM)</span></div>'+
+     '<div class="mir-row"><b>품질</b><span class="mir-sys">'+(d.fileMeta.quality==="native"?"네이티브 텍스트 — RAG 추출 가능":"스캔본 — OCR 필요")+'</span></div>'+
+     '<div class="mir-row"><b>내부 고지 대조</b><span class="mir-sys" style="'+(mis?"color:var(--risk);font-weight:700":"")+'">'+(mis?"불일치 — 페이지 표기와 파일 내부 저작권 고지가 다름 (재판정 회부됨)":"일치 — 페이지 표기 = 파일 내부 고지")+'</span></div>'+
+     (d.state==="staged"?'<div class="mir-row"><b>업로드까지</b><span class="mir-sys">'+cdFmt(remainSec(d))+' — 이후 비가역</span></div>':'')+
+     (d.state==="uploaded"?'<div class="mir-row"><b>업로드</b><span class="mir-sys">'+esc(d.uploadedAt)+' 확정(비가역) · 업로드 원장 기록됨</span></div>':'')+
+    '</div>';
+  }else body='<div class="warnbox">'+ic("alert-triangle",13)+' 원본 확보 실패 ×'+d.fetchFail+' — 재시도 대기. 원본이 저장되지 않으면 업로드할 수 없습니다.</div>';
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("shield-check",13)+' 원본 확보·검증 <span class="hint-back">원본 저장이 RAG·Viva 배포의 전제조건</span></div>'+body+'</div>';
+}
+function snapHTML(d){
+  let t=esc(d.snapExc||"(스냅샷 없음)");
+  if(d.snapMark){const m=esc(d.snapMark);t=t.split(m).join("<mark>"+m+"</mark>");}
+  return t;
+}
+function distGroup(d){
+  const folder=DB.settings.catMap[d.cat]||DB.settings.folders[0];
+  const p=folder.replace(/\s*>\s*/g,"/");
+  const dist=d.dist||distFor();
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("layers",13)+' RAG·Viva 동시 배포 — 폴더 트리 동일 미러</div>'+
+   '<div class="mirror">'+
+    '<div class="mir-row"><b>SharePoint (원본)</b><span class="mir-sys">/SharePoint/'+esc(p)+'/'+esc(d.spName||"")+' — 적재됨 · 비가역</span></div>'+
+    '<div class="mir-row"><b>사내 AI RAG</b><span class="mir-sys">rag://kb/'+esc(p)+' — 동시 업로드됨</span></div>'+
+    '<div class="mir-row"><b>Viva Learning</b><span class="mir-sys">viva://'+esc(p)+' — 동시 업로드됨</span></div></div>'+
+   '<div class="setgrp-d">SharePoint 업로드 순간 RAG·Viva에 <b>동시에 올라가며 선택적 제외가 불가능</b>합니다. 그래서 업로드 자격 판정이 세 용도(열람·AI·교육)를 전부 요구하고, 개별 회수도 불가능해 문제는 사후 조치 대장으로 추적합니다.</div></div>';
+}
+
+/* 승인·반려 — 사유 필수. 승인 = 즉시 업로드가 아니라 '원본 확보 → 유예 대기' 진입 */
+function openDecision(id,choice){dialog={type:"decision",id,choice};renderDialog();}
+function decisionDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.id),ap=dialog.choice==="approve";
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic(ap?"check":"x",16)+(ap?"승인":"반려")+'<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div style="font-size:13px;line-height:1.6"><b>'+esc(d.title)+'</b><br><span style="color:var(--t3);font-size:12px">'+esc(d.source)+' · '+LV_META[d.lv].short+' · 신뢰도 '+d.conf+'%</span></div>'+
+   (ap?'<div class="setgrp-d">'+ic("arrow-right",12)+' 승인하면: '+(d.fileMeta?"원본 기확보 → ":"원본 확보·내부 대조 → ")+'업로드 대기('+delayLabel()+') → SharePoint 업로드(비가역) → RAG·Viva 배포. 대기 중에는 취소할 수 있습니다.</div>':'')+
+   (function(){
+     const past=DB.docs.filter(x=>x.id!==d.id&&x.manual&&x.manual.route&&x.manual.route!=="pending"&&((x.source===d.source)||(d.catalogId&&x.catalogId===d.catalogId))).slice(0,2);
+     if(!past.length)return"";
+     return '<div class="setgrp"><div class="setgrp-t">'+ic("history",13)+' 비슷한 과거 결정</div>'+
+      past.map(p=>'<div class="pastdec"><span class="route '+(p.manual.route==="approved"?"ok":"mut")+'">'+(p.manual.route==="approved"?"승인":"반려")+'</span><b style="font-size:12px">'+esc(p.title.slice(0,24))+(p.title.length>24?"…":"")+'</b><span class="pd-r">'+esc(p.manual.reason||"")+'</span></div>').join("")+
+      '<div class="setgrp-d">같은 '+(past[0].source===d.source?"출처":"카탈로그 항목")+'에 대한 이전 판단입니다 — 일관성 참고용.</div></div>';
+   })()+
+   '<div class="fld"><label>결정 사유 (필수)</label><textarea id="dec-reason" placeholder="'+(ap?"예: 협회 공개 자료로 사내 열람 목적 부합 확인":"예: 출처 신뢰도 부족, 사내 지식과 무관")+'"></textarea></div>'+
+   '<div class="setgrp-d">'+ic("bot",12)+' 이 사유는 판정 근거와 함께 저장되어 같은 출처·라이선스 패턴의 자동 분류 정확도 개선에 축적됩니다.</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button>'+
+   '<button class="btn primary" onclick="applyDecision()">'+(ap?"승인 — 업로드 절차 시작":"반려 확정")+'</button></div></div>';
+}
+function applyDecision(){
+  const d=DB.docs.find(x=>x.id===dialog.id);const reason=(document.getElementById("dec-reason").value||"").trim();
+  if(!reason){toastMsg("결정 사유를 입력해주세요");return;}
+  const ap=dialog.choice==="approve";
+  d.manual={route:ap?"approved":"rejected",reason,reasonShort:reason.slice(0,18)+(reason.length>18?"…":"")};
+  reviewDone++;kbdIdx=-1;
+  closeDlg();
+  if(!ap){d.evalWhy="관리자 반려 — "+reason;d.rules=null;transition(d,"rejected","관리자",reason);toastMsg("반려했습니다 — 사유가 축적되었습니다");render();return;}
+  d.evalWhy="관리자 승인 — "+reason;d.rules=null;
+  audit(d.title,"관리자 승인","관리자",reason);
+  beginFetch(d,"관리자",{lic:d.appliedLic,why:d.evalWhy},"승인에 따른 업로드 절차");
+  toastMsg(d.fileMeta?"승인 — 업로드 대기로 이동했습니다":"승인 — 원본 확보 후 업로드 대기로 이동합니다");
+  render();
+}
+
+/* 업로드 확정 체크리스트 — 비가역의 마지막 관문 */
+function openUploadConfirm(id){dialog={type:"upconfirm",id,ack:false};renderDialog();}
+function upconfirmDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.id);
+  const lic=d.appliedLic?DB.licenses.find(l=>l.id===d.appliedLic):null;
+  const folder=DB.settings.catMap[d.cat]||DB.settings.folders[0];
+  const rows=[
+   ["원본 확보·무결성",d.fileMeta?esc(d.fileMeta.hash)+" · "+esc(d.fileMeta.size):"미확보",!!d.fileMeta],
+   ["내부 고지 대조",d.fileMeta&&d.fileMeta.inner==="match"?"페이지 표기와 일치":"불일치",d.fileMeta&&d.fileMeta.inner==="match"],
+   ["근거 스냅샷","판정 시점 캡처 보관됨",true],
+   ["라이선스 (3용도 번들)",lic?esc(lic.id)+" · "+licStatus(lic).label+" · 열람·AI·교육 커버"+(lic.survival?" · 잔존 조항":" · 잔존 조항 없음 ⚠")
+     :(d.lv<=2?LV_META[d.lv].short+" — 자유·조건부 이용, 3채널 배포 가능":"없음"),lic?true:(d.lv<=2)],
+   ["보안·개인정보 스캔","이상 없음 (악성코드·매크로·개인정보)",true],
+   ["폴더 매칭","/SharePoint/"+esc(folder.replace(/\s*>\s*/g,"/"))+"/ · 신뢰도 "+(d.folderConf||100)+"%"+((d.folderConf||100)<DB.settings.folderThreshold?" < 임계 "+DB.settings.folderThreshold+"% — 폴더를 직접 확인하셨습니까?":" · 양호"),(d.folderConf||100)>=DB.settings.folderThreshold]];
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("shield-check",16)+'업로드 확정 체크리스트<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div style="font-size:13px"><b>'+esc(d.title)+'</b></div>'+
+   '<div class="fn">'+ic("file-text",10)+' '+esc(fileNameFor(d))+'</div>'+
+   '<div class="mirror">'+rows.map(r=>'<div class="mir-row"><b>'+r[0]+'</b><span class="mir-sys" style="'+(r[2]?"":"color:var(--risk);font-weight:700")+'">'+(r[2]?"✓ ":"✕ ")+r[1]+'</span></div>').join("")+'</div>'+
+   '<div class="warnbox">'+ic("alert-triangle",14)+' 업로드하면 즉시 RAG·Viva Learning으로 전파되며 <b>삭제·회수할 수 없습니다.</b> 이후 문제는 사후 조치 대장(수동 삭제 요청)으로만 처리됩니다.</div>'+
+   '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" onchange="dialog.ack=this.checked;document.getElementById(\'up-go\').disabled=!this.checked" /> 비가역성을 이해했으며 업로드를 확정합니다</label>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button>'+
+   '<button class="btn primary" id="up-go" disabled onclick="confirmUpload()">'+ic("check",13)+'SharePoint 업로드 확정</button></div></div>';
+}
+function confirmUpload(){
+  const d=DB.docs.find(x=>x.id===dialog.id);closeDlg();
+  if(!d||d.state!=="staged")return;
+  doUpload(d,"관리자");toastMsg("업로드 확정 — RAG·Viva로 배포되었습니다 (비가역)");render();
+}
+
+/* 문제 신고 → 인시던트 생성 */
+function openIncForm(docId){dialog={type:"incform",docId};renderDialog();}
+function incformDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.docId);
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("alert-triangle",16)+'문제 신고 — 사후 조치 등록<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div style="font-size:13px"><b>'+esc(d.title)+'</b><div class="fn" style="margin-top:5px">'+esc(d.spName||"")+'</div></div>'+
+   '<div class="fld"><label>유형</label><select id="inc-kind"><option>권리자 클레임</option><option>오적재 (잘못된 폴더·중복)</option><option>내용 오류·품질 문제</option><option>개인정보 포함 발견</option><option>기타</option></select></div>'+
+   '<div class="fld"><label>내용 (필수)</label><textarea id="inc-desc" placeholder="예: 권리자로부터 게시 중단 요청 접수 (메일 첨부)"></textarea></div>'+
+   '<div class="setgrp-d">업로드분은 시스템이 지울 수 없으므로, 신고는 SharePoint·Viva 관리자 대상 수동 삭제 요청 절차로 이어집니다.</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button><button class="btn primary" onclick="saveInc()">'+ic("check",13)+'등록</button></div></div>';
+}
+function saveInc(){
+  const desc=val("inc-desc");if(!desc){toastMsg("내용을 입력해주세요");return;}
+  const kind=val("inc-kind")||"기타";const docId=dialog.docId;closeDlg();
+  const inc=addIncident(kind,desc,docId,null);
+  toastMsg(inc?"사후 조치 대장에 등록했습니다":"동일 유형의 미결 인시던트가 이미 있습니다");
+  activeView="incidents";render();
+}
+
+/* L4 라이선스 문의 이메일 초안 — 실제 다운스트림 용도 + 잔존 조항까지 명시 요청 */
+function openMail(id){dialog={type:"mail",id};renderDialog();}
+function mailDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.id);
+  const uses=["사내 열람 (SharePoint 지식관리 시스템)","사내 AI 검색(RAG) 인덱싱","사내 교육 플랫폼(Viva Learning) 게시"].concat(DB.settings.usage.redistribute?["사내 시스템 재배포"]:[]).concat(DB.settings.usage.commercial?["상업적 활용"]:[]);
+  const body="받는 사람: "+(d.contact||"(권리자 문의처)")+"\n제목: [라이선스 문의] “"+d.title+"” 사내 이용 허락 요청\n\n안녕하세요, 경동나비엔 지식관리 담당자입니다.\n\n귀사의 자료 “"+d.title+"”("+d.url+")를 당사 사내 지식관리 시스템에서 다음 범위로 이용하고자 합니다.\n\n- 이용 범위: "+uses.join(", ")+"\n- 이용 인원: 사내 임직원 한정\n- 기간: 연 단위 갱신 희망\n- 유의: 위 세 용도(열람·AI 검색·교육 게시)는 당사 시스템 구조상 분리 적용이 불가능하여, 세 용도가 모두 포함된 허락이 필요합니다.\n- 요청 조항: 계약 종료 후에도 기존 적재분의 유지가 가능한 잔존 조항(survival clause) 포함을 요청드립니다. (당사 시스템 특성상 게시 후 개별 회수가 어렵습니다)\n\n해당 범위의 라이선스 조건과 견적을 안내해 주시면 감사하겠습니다.\n\n감사합니다.\n경동나비엔 지식관리팀";
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("mail",16)+'라이선스 문의 초안 <span class="hint-back">AI 생성 — 발송은 사람이</span><button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div class="mailbox" id="mailbody">'+esc(body)+'</div>'+
+   '<div class="setgrp-d">초안은 현재 정책 설정과 배포 구조(RAG·Viva)를 반영해 생성됩니다. 특히 <b>잔존 조항</b>은 비가역 적재 구조에서 가장 중요한 협상 항목입니다.</div></div>'+
+  '<div class="modal-f"><button class="btn" onclick="copyMail()">'+ic("copy",13)+'복사</button><button class="btn primary" onclick="closeDlg()">확인</button></div></div>';
+}
+function copyMail(){
+  const t=document.getElementById("mailbody").innerText;
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toastMsg("초안을 복사했습니다"));
+  else toastMsg("이 환경에서는 복사가 지원되지 않습니다");
+}
+
+/* 수집 소스 추가 — 저장 시 소스 테이블에 등록, 가동 상태면 다음 주기부터 수집 */
+function openSrcForm(){dialog={type:"src"};renderDialog();}
+function srcDlg(){
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("radio",16)+'수집 소스 추가<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body">'+
+   '<div class="fld"><label>소스 이름 (필수)</label><input id="sf-name" placeholder="예: 환경부 보도자료 RSS" /></div>'+
+   '<div class="fld"><label>주소 (필수)</label><input id="sf-url" placeholder="https://… — RSS 피드 주소 · API 엔드포인트 · 수집 시작 페이지" />'+
+    '<div class="setgrp-d">이 주소에서 수집이 시작됩니다. robots.txt·약관의 수집 금지 신호는 주소 단위로 함께 점검됩니다.</div></div>'+
+   '<div class="frow"><div class="fld"><label>연동 방식</label><select id="sf-kind"><option>RSS</option><option>OpenAPI</option><option>REST API</option><option>웹 페이지</option></select></div>'+
+    '<div class="fld"><label>수집 주기</label><select id="sf-sched"><option>30분</option><option>1시간</option><option>6시간</option><option selected>1일 1회</option></select></div></div>'+
+   '<div class="fld"><label>인증 키 (선택)</label><input id="sf-auth" type="password" placeholder="API 키 — 발급받은 경우만" /></div>'+
+   '<div class="fld"><label>소급 수집 범위</label><select id="sf-back"><option value="none" selected>신규분만 — 등록 이후 발행분</option><option value="3m">최근 3개월 소급</option><option value="12m">최근 12개월 소급</option><option value="all">전체 아카이브</option></select>'+
+    '<div class="setgrp-d">업로드는 비가역이라 소급분에는 안전장치가 붙습니다 — 1회 200건 상한으로 나눠 수집되고, 자동 적재 자격이어도 <b>검토 대기</b>로 들어옵니다(보수 모드).</div></div>'+
+   '<div class="fld"><label>계약 연결 — 권리 원장</label><select id="sf-licref"><option value="">계약 없음 — 문서별 판정을 따름</option>'+DB.licenses.filter(l=>!l.revoked).map(l=>'<option value="'+esc(l.id)+'">'+esc(l.id)+' · '+esc(l.name)+' ('+esc(licStatus(l).label)+')</option>').join("")+'</select>'+
+    '<div class="setgrp-d">계약 소스는 원장 라이선스에 연결하세요 — 계약이 <b>만료·해지되면 이 소스의 수집이 자동 중지</b>됩니다. 계약 없이도 등록은 가능하며, 자료는 문서별 저작권 판정을 그대로 따릅니다.</div></div>'+
+   '<div class="setgrp-d">자료 유형은 따로 지정하지 않습니다 — 소스는 일단 넓게 수집하고, 문서마다 분류·저작권 판정이 개별로 붙습니다.</div>'+
+   '<div class="userow"><div class="ut"><b>바로 가동</b><span>끄면 등록만 하고 수집은 시작하지 않습니다</span></div><button type="button" class="sw on" id="sf-on" onclick="this.classList.toggle(\'on\')" aria-label="가동 여부"></button></div>'+
+   '<div class="setgrp-d">'+ic("shield-alert",12)+' 로그인·페이월 우회가 필요한 소스는 등록해도 수집 단계에서 차단됩니다(L5 접근통제).</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button><button class="btn primary" onclick="saveSrc()">'+ic("check",13)+'등록</button></div></div>';
+}
+const BACKFILL_LABEL={none:"신규분만","3m":"최근 3개월","12m":"최근 12개월",all:"전체 아카이브"};
+function srcLicChip(s){
+  if(s.licenseId){
+    const l=DB.licenses.find(x=>x.id===s.licenseId);
+    if(!l)return ' · <span style="color:var(--warn);font-weight:700">원장 레코드 없음</span>';
+    const st=licStatus(l);
+    if(l.revoked||st.k==="expired")return ' · <span style="color:var(--risk);font-weight:700">'+esc(s.licenseId)+' 계약 종료 — 수집 중지</span>';
+    return ' · <span style="color:'+(st.k==="expiring"?"var(--warn)":"var(--ok)")+';font-weight:700">'+esc(s.licenseId)+' · '+esc(st.label)+'</span>';
+  }
+  return s.licensed?' · <span style="color:var(--ok);font-weight:700">계약됨</span>':' · <span style="color:var(--warn);font-weight:700">미계약</span>';
+}
+function saveSrc(){
+  const name=val("sf-name");if(!name){toastMsg("소스 이름을 입력해주세요");return;}
+  let url=val("sf-url");if(!url){toastMsg("수집 주소를 입력해주세요");return;}
+  if(!/^https?:\/\//i.test(url))url="https://"+url;
+  const auth=val("sf-auth"),licref=val("sf-licref"),back=val("sf-back")||"none";
+  const s={name,url,kind:val("sf-kind")||"RSS",backfill:back,licenseId:licref||null,licensed:!!licref,
+   auth:auth?"••••"+auth.slice(-4):"",
+   schedule:val("sf-sched")||"1일 1회",on:document.getElementById("sf-on").classList.contains("on")};
+  DB.settings.sources.push(s);
+  audit("—","소스 등록: "+s.name,"관리자",s.kind+" · "+url+" · "+s.schedule+" · 소급 "+(BACKFILL_LABEL[back]||back)+(licref?" · "+licref+" 연결":" · 계약 없음")+(s.on?" · 가동":" · 중지"));
+  closeDlg();
+  toastMsg("소스를 등록했습니다"+(back!=="none"?" — 소급분은 검토 대기로 들어옵니다":(s.on?" — 다음 주기부터 수집합니다":"")));
+  if(settingsOpen)renderModal();render();
+}
+
+/* 알림 드로어 — 상태에서 실시간 계산 (읽음 처리 불필요: 원인이 해소되면 사라짐) */
+function notifItems(){
+  const items=[];
+  DB.licenses.filter(l=>!l.revoked&&licStatus(l).k==="expiring").forEach(l=>{
+    const d7=daysUntil(l.end)<=7;
+    if((d7&&DB.settings.notify.d7)||(!d7&&DB.settings.notify.d30))
+      items.push({sev:l.survival?"warn":"risk",icon:"calendar",t:l.id+" "+licStatus(l).label+(l.survival?"":" · 잔존 조항 없음"),d:"갱신 협상 또는 잔존 조항 확보가 필요합니다",act:"ledger"});
+  });
+  DB.docs.filter(d=>d.state==="staged"&&(d.folderConf||100)<DB.settings.folderThreshold).forEach(d=>
+    items.push({sev:"warn",icon:"folder",t:"자동 업로드 보류 — 폴더 확인 필요",d:d.title,act:"staging"}));
+  DB.docs.filter(d=>d.fetchFail).forEach(d=>
+    items.push({sev:"warn",icon:"alert-triangle",t:"원본 확보 실패 ×"+d.fetchFail,d:d.title+" — 재시도 대기 또는 직접 업로드",act:"queue"}));
+  DB.settings.sources.forEach(s=>{
+    if(!s.licenseId||s.on)return;
+    const l=DB.licenses.find(x=>x.id===s.licenseId);
+    if(l&&(l.revoked||licStatus(l).k==="expired"))items.push({sev:"risk",icon:"radio",t:"소스 수집 중지: "+s.name,d:s.licenseId+" 계약 종료 — 갱신 전 재가동 금지",act:"none"});
+  });
+  const inc=DB.incidents.filter(i=>i.status!=="resolved").length;
+  if(inc)items.push({sev:"risk",icon:"alert-triangle",t:"사후 조치 미결 "+inc+"건",d:"회수 불가분 수동 조치가 진행 중입니다",act:"incidents"});
+  return items.sort((a,b)=>(a.sev==="risk"?0:1)-(b.sev==="risk"?0:1));
+}
+function openNotif(){dialog={type:"notif"};renderDialog();}
+function notifDlg(){
+  const items=notifItems();
+  return '<div class="modal drawer" role="dialog" aria-modal="true" aria-label="알림"><div class="modal-h">'+ic("bell-ring",16)+'알림 <span class="hint-back">'+items.length+'건</span><button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body">'+(items.length?items.map(n=>
+    '<div class="ntf '+n.sev+'"'+(n.act&&n.act!=="none"?' onclick="closeDlg();'+(n.act==="ledger"?"ledgerMode=\'lic\';":"")+'setView(\''+n.act+'\')"':'')+'><span class="ntf-ico">'+ic(n.icon,14)+'</span><div><div class="ntf-t">'+esc(n.t)+'</div><div class="ntf-d">'+esc(n.d)+'</div></div></div>').join("")
+   :'<div class="empty">'+ic("check-check",22)+'<br>새 알림이 없습니다.</div>')+
+  '</div><div class="modal-f"><span class="note">알림은 상태에서 실시간 계산되어, 원인이 처리되면 자동으로 사라집니다.</span><button class="btn" onclick="closeDlg()">닫기</button></div></div>';
+}
+
+/* 묶음 승인 — 같은 출처·같은 카탈로그 항목의 검토 대기분을 한 사유로 일괄 처리 */
+function openBulk(i){const b=bulkGroups[i];if(!b)return;dialog={type:"bulk",ids:b.ids.slice(),label:b.label};renderDialog();}
+function bulkDlg(){
+  const docs=dialog.ids.map(id=>DB.docs.find(d=>d.id===id)).filter(Boolean);
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("layers",16)+'일괄 승인 — '+esc(dialog.label)+'<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body">'+
+   '<div class="mirror">'+docs.map(d=>'<div class="mir-row"><b>'+esc(LV_META[d.lv].short)+' · '+d.conf+'%</b><span class="mir-sys">'+esc(d.title)+'</span></div>').join("")+'</div>'+
+   '<div class="fld"><label>결정 사유 (필수 — '+docs.length+'건에 동일하게 기록)</label><textarea id="blk-reason" placeholder="예: 동일 카탈로그 항목 — 법무 가이드 확인 후 사내 열람 목적 승인"></textarea></div>'+
+   '<div class="setgrp-d">'+ic("arrow-right",12)+' 각 건은 개별로 원본 확보 → 업로드 대기('+delayLabel()+', 취소 가능)를 거칩니다 — 일괄 승인이어도 대기 중 개별 취소가 가능합니다.</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button><button class="btn primary" onclick="applyBulk()">'+ic("check",13)+docs.length+'건 일괄 승인</button></div></div>';
+}
+function applyBulk(){
+  const reason=(document.getElementById("blk-reason").value||"").trim();
+  if(!reason){toastMsg("결정 사유를 입력해주세요");return;}
+  const ids=dialog.ids;closeDlg();
+  let n=0;
+  ids.forEach(id=>{const d=DB.docs.find(x=>x.id===id);if(!d||d.state!=="review")return;
+    d.manual={route:"approved",reason,reasonShort:reason.slice(0,18)+(reason.length>18?"…":"")};
+    d.evalWhy="관리자 일괄 승인 — "+reason;d.rules=null;reviewDone++;n++;
+    audit(d.title,"관리자 일괄 승인","관리자",reason);
+    beginFetch(d,"관리자",{lic:d.appliedLic,why:d.evalWhy},"일괄 승인에 따른 업로드 절차");});
+  kbdIdx=-1;toastMsg(n+"건 일괄 승인 — 원본 확보 후 업로드 대기로 이동합니다");render();
+}
+
+/* 원본 직접 업로드 — 자동 확보 실패분을 사람이 정당한 권한으로 등록 */
+function openManualUp(id){dialog={type:"manup",id};renderDialog();}
+function manupDlg(){
+  const d=DB.docs.find(x=>x.id===dialog.id);
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("file-text",16)+'원본 직접 업로드<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div style="font-size:13px;line-height:1.6"><b>'+esc(d.title)+'</b><br><span style="color:var(--t3);font-size:12px">자동 확보 실패 ×'+(d.fetchFail||0)+' — 사람이 확보한 원본으로 대체합니다</span></div>'+
+   '<div class="fld"><label>원본 파일 선택</label><input type="file" id="mu-file" /></div>'+
+   '<div class="warnbox">'+ic("shield-alert",14)+' 정당한 권한으로 확보한 파일만 등록하세요 — 로그인·페이월을 우회해 취득한 파일은 등록 자체가 금지됩니다(L5 접근통제).</div>'+
+   '<div class="setgrp-d">등록하면 해시를 떠서 불변 보관되고, 파일 내부 고지를 페이지 표기와 대조합니다. 판정은 그대로 유지되며, 승인 시 원본 확보 단계를 건너뛰고 바로 업로드 대기로 이동합니다.</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button><button class="btn primary" onclick="applyManualUp()">'+ic("check",13)+'원본 등록</button></div></div>';
+}
+function applyManualUp(){
+  const d=DB.docs.find(x=>x.id===dialog.id);
+  const f=document.getElementById("mu-file");
+  const file=f&&f.files&&f.files[0];
+  if(!file){toastMsg("파일을 선택해주세요");return;}
+  const ext=(file.name.split(".").pop()||"pdf").toLowerCase();
+  const size=file.size?(Math.round(file.size/1024/10.24)/100)+"MB":"1.0MB";
+  d.fileMeta=genMeta(d,{ext:ext,size:size});d.fetchFail=0;
+  d.history.push({t:nowHM(),from:"확보 실패",to:"원본 확보(수동)",by:"관리자",note:file.name+" · 해시 "+d.fileMeta.hash});
+  audit(d.title,"원본 수동 확보 — 사람 업로드","관리자","파일 "+file.name+" · 해시 "+d.fileMeta.hash+" · 불변 보관 · 내부 고지 대조 일치");
+  closeDlg();toastMsg("원본 확보 완료 — 승인 시 바로 업로드 대기로 이동합니다");render();
+}
+
+/* 라이선스 등록 폼 — 저장 즉시 보류함 재평가, 잔존 조항 포함 */
+function openLicForm(prefillScope){dialog={type:"lic",scope:prefillScope||""};renderDialog();}
+function licDlg(){
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("book-key",16)+'라이선스 등록<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body">'+
+   '<div class="fld"><label>라이선스 이름 (필수)</label><input id="lf-name" placeholder="예: RefSci Review 사내 교육 라이선스" /></div>'+
+   '<div class="fld"><label>범위 — 출처 매칭 문자열 (필수)</label><input id="lf-scope" value="'+esc(dialog.scope)+'" placeholder="예: Refrigeration Science Review" />'+
+    '<div class="setgrp-d">이 문자열이 포함된 출처의 문서가 라이선스 대상이 됩니다. 매칭이 애매하면 재평가 결과를 반드시 확인하세요(범위 초과 방지).</div></div>'+
+   '<div class="frow"><div class="fld"><label>시작일</label><input id="lf-start" type="date" value="'+addDays(0)+'" /></div>'+
+    '<div class="fld"><label>만료일</label><input id="lf-end" type="date" value="'+addDays(365)+'" /></div></div>'+
+   '<div class="fld"><label>허용 용도 — 적재 필수 번들 + 선택</label><div class="chipline">'+
+    '<label class="sig"><input type="checkbox" id="lf-u-int" checked disabled /> 사내 열람</label>'+
+    '<label class="sig"><input type="checkbox" id="lf-u-ai" checked /> AI 인덱싱(RAG)</label>'+
+    '<label class="sig"><input type="checkbox" id="lf-u-edu" checked /> 교육 게시(Viva)</label>'+
+    '<label class="sig"><input type="checkbox" id="lf-u-red" /> 재배포</label>'+
+    '<label class="sig"><input type="checkbox" id="lf-u-com" /> 상업적 이용</label></div>'+
+    '<div class="setgrp-d">적재는 SharePoint·RAG·Viva <b>동시 업로드(분리 불가)</b>입니다. AI 인덱싱·교육 게시 중 하나라도 빠진 계약은 원장에 기록은 되지만 <b>이 라이선스로는 적재가 불가</b>하며, 해당 문서는 보류에 남습니다. 협상 시 세 용도 모두 포함을 목표로 하세요.</div></div>'+
+   '<div class="fld"><label>잔존 조항 (survival clause)</label>'+
+    '<label class="sig" style="align-self:flex-start"><input type="checkbox" id="lf-sv" /> 계약 종료 후 기적재분 유지 허용 조항 포함</label>'+
+    '<div class="setgrp-d" style="color:var(--risk)">'+ic("alert-triangle",11)+' 업로드는 비가역이므로, 잔존 조항 없는 기간제 라이선스는 만료 시 기적재분이 위반 리스크로 영구화됩니다. 계약 협상 시 반드시 포함을 시도하세요.</div></div>'+
+   '<div class="fld"><label>의무·조건</label><input id="lf-ob" placeholder="예: 출처표기 의무, 접속 인원 50석 한정" /></div>'+
+   '<div class="frow"><div class="fld"><label>권리자 문의처</label><input id="lf-ct" placeholder="permissions@..." /></div>'+
+    '<div class="fld"><label>계약서 파일 (근거)</label><input id="lf-file" placeholder="계약서_XXX_2026.pdf" /></div></div>'+
+   '<div class="setgrp-d">'+ic("bot",12)+' 계약서 PDF를 업로드하면 AI가 이 폼의 초안(잔존 조항 포함)을 읽어 채우고, <b>확정은 사람이</b> 합니다. 저장 즉시 보류함 재평가가 실행됩니다.</div>'+
+  '</div><div class="modal-f"><button class="btn" onclick="closeDlg()">취소</button><button class="btn primary" onclick="saveLic()">'+ic("check",13)+'등록하고 재평가</button></div></div>';
+}
+function saveLic(){
+  const name=val("lf-name"),scope=val("lf-scope");
+  if(!name||!scope){toastMsg("이름과 범위를 입력해주세요");return;}
+  const l={id:"LIC-"+String(DB.licenses.length+1).padStart(3,"0"),name,scope,
+   uses:{internal:true,ai:chk("lf-u-ai"),education:chk("lf-u-edu"),redistribute:chk("lf-u-red"),commercial:chk("lf-u-com")},
+   survival:chk("lf-sv"),
+   start:val("lf-start"),end:val("lf-end"),obligations:val("lf-ob")||"—",contact:val("lf-ct")||"—",file:val("lf-file")||"(미첨부)",revoked:false};
+  DB.licenses.push(l);
+  audit("—","라이선스 등록: "+l.id+" · "+l.name,"관리자","범위 “"+scope+"” · "+l.start+"~"+l.end+(l.survival?" · 잔존 조항 포함":" · 잔존 조항 없음"));
+  const n=reEvaluateAll("시스템(권리 원장)",l.id+" 등록에 따른 재평가");
+  closeDlg();
+  toastMsg((l.uses.ai&&l.uses.education)?("등록 완료 — "+n+"건이 원본 확보 → 업로드 대기로 이동합니다"):"등록됨 — 단, AI·교육 용도 미포함이라 이 라이선스로는 적재가 불가합니다(문서는 보류 유지)");
+  render();
+}
+function val(id){const e=document.getElementById(id);return e?e.value.trim():"";}
+function chk(id){const e=document.getElementById(id);return e?e.checked:false;}
+
+/* 공용 확인 다이얼로그 */
+let _confirmCb=null,_confirmCancel=null;
+function confirmDlg(title,html,cb,cancelCb){dialog={type:"confirm",title,html};_confirmCb=cb;_confirmCancel=cancelCb||null;renderDialog();}
+function confirmHTML(){
+  return '<div class="modal sm" role="dialog" aria-modal="true"><div class="modal-h">'+ic("alert-triangle",16)+esc(dialog.title)+'<button class="modal-x" onclick="closeDlg()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+  '<div class="modal-body"><div style="font-size:13px;line-height:1.7;color:var(--t2)">'+dialog.html+'</div></div>'+
+  '<div class="modal-f"><button class="btn" onclick="var c=_confirmCancel;_confirmCancel=null;closeDlg();if(c)c()">취소</button><button class="btn primary" onclick="var cb=_confirmCb;_confirmCb=null;_confirmCancel=null;closeDlg();if(cb)cb()">실행</button></div></div>';
+}
+/* 정책 드라이런 — 변경을 적용하기 '전에' 미결 문서의 이동을 예측해 보여준다.
+   특히 자동 적재 경로 진입(비가역까지 자동 진행)은 사전 확인이 필수. */
+function policyPreview(title,mut,apply,extraNote){
+  const S=DB.settings;
+  const snap={u:JSON.parse(JSON.stringify(S.usage)),c:S.confidenceThreshold,l:JSON.parse(JSON.stringify(S.levelActions))};
+  mut();
+  const moves={};let up=0;
+  DB.docs.forEach(d=>{
+    if(!["review","held","blocked"].includes(d.state))return;
+    if(d.manual&&d.manual.route==="rejected")return;
+    const to=evaluate(d).route;
+    if(to!==d.state){const k=ROUTE_META[d.state].label+" → "+(to==="uploaded"?"자동 적재 경로":ROUTE_META[to].label);moves[k]=(moves[k]||0)+1;if(to==="uploaded")up++;}
+  });
+  S.usage=snap.u;S.confidenceThreshold=snap.c;S.levelActions=snap.l;
+  const parts=Object.keys(moves).map(k=>k+" <b>"+moves[k]+"건</b>");
+  if(!parts.length){apply();return;}
+  confirmDlg(title,
+   "적용하면 미결 문서가 이렇게 이동합니다:<br><br>· "+parts.join("<br>· ")+
+   (up?'<br><br><b style="color:var(--risk)">자동 적재 경로 진입 '+up+'건</b> — 원본 확보·대기를 거쳐 비가역 업로드까지 자동 진행됩니다.':"")+
+   (extraNote?"<br><br>"+extraNote:"")+"<br><br>계속할까요?",
+   apply,function(){if(settingsOpen)renderModal();});
+}
+function toastMsg(msg){const r=document.getElementById("toastroot");
+  r.innerHTML='<div class="toast">'+ic("check",13)+esc(msg)+'</div>';
+  clearTimeout(window.__t);window.__t=setTimeout(()=>r.innerHTML="",2400);}
+/* ═════════════════════════════════════════════════════════════════
+   6) 설정 모달 — 정책(용도·레벨·임계값·유예) / 수집 소스 / 분류·적재(공통 트리·파일명 규칙)
+   ═════════════════════════════════════════════════════════════════ */
+function openSettings(){settingsOpen=true;mTab="policy";renderModal();}
+function closeSettings(){settingsOpen=false;renderModal();}
+function switchMTab(t){mTab=t;renderModal();}
+function renderModal(){
+  const r=document.getElementById("modalroot");
+  if(!settingsOpen){r.innerHTML="";return;}
+  let body;
+  try{body=mTab==="policy"?policyHTML():mTab==="sources"?sourcesHTML():mTab==="lic"?licRulesHTML():mTab==="conn"?connHTML():routingHTML();}
+  catch(e){body='<div class="warnbox">'+ic("alert-triangle",14)+' 이 탭을 그리는 중 오류가 발생했습니다 — 아래 내용을 전달해주세요.<br><span style="font-family:ui-monospace,Consolas,monospace;font-size:11px;word-break:break-all">'+esc(String(e&&e.stack||e))+'</span></div>';}
+  r.innerHTML='<div class="mbg" onclick="if(event.target===this)closeSettings()"><div class="modal" role="dialog" aria-modal="true">'+
+   '<div class="modal-h">'+ic("settings",16)+'에이전트 설정 <span class="hint-back">변경은 저장 즉시 파이프라인에 반영</span><button class="modal-x" onclick="closeSettings()" aria-label="닫기">'+ic("x",16)+'</button></div>'+
+   '<div class="mtabs">'+
+    '<button class="mtab'+(mTab==="policy"?" active":"")+'" onclick="switchMTab(\'policy\')">'+ic("scale",13)+'정책 (용도·레벨·대기)</button>'+
+    '<button class="mtab'+(mTab==="sources"?" active":"")+'" onclick="switchMTab(\'sources\')">'+ic("radio",13)+'수집 소스</button>'+
+    '<button class="mtab'+(mTab==="lic"?" active":"")+'" onclick="switchMTab(\'lic\')">'+ic("book-key",13)+'저작권 표기 규칙</button>'+
+    '<button class="mtab'+(mTab==="routing"?" active":"")+'" onclick="switchMTab(\'routing\')">'+ic("layers",13)+'분류·적재·파일명</button>'+
+    '<button class="mtab'+(mTab==="conn"?" active":"")+'" onclick="switchMTab(\'conn\')">'+ic("key",13)+'연동 (API)</button>'+
+   '</div><div class="modal-body">'+body+'</div>'+
+   '<div class="modal-f"><span class="note">파일 기준: '+esc(document.lastModified)+'</span><button class="btn primary" onclick="closeSettings()">닫기</button></div></div></div>';
+}
+function policyHTML(){
+  const S=DB.settings,U=S.usage;
+  const useRow=(key,title,desc)=>'<div class="userow"><div class="ut"><b>'+title+'</b><span>'+desc+'</span></div>'+
+   '<button class="sw'+(U[key]?" on":"")+'" onclick="toggleUsage(\''+key+'\')" aria-label="'+title+'"></button></div>';
+  const lvRow=(lv,ctl)=>'<div class="lvrow">'+lvBadge(lv)+'<div class="d"><b>'+esc(LV_META[lv].desc)+'</b><br>'+esc(LV_META[lv].act)+'</div>'+ctl+'</div>';
+  const delayOpts=[[0,"즉시 (비권장)"],[60,"1분 (데모)"],[1800,"30분"],[7200,"2시간"],[86400,"24시간"]];
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("user",14)+' 우리 조직의 이용 목적</div>'+
+   '<div class="setgrp-d">L2 조건부 자료의 조건 대조와 라이선스 유효성 판정의 기준값입니다. <b>변경하면 미결 문서가 재평가됩니다</b> — 이미 업로드된 문서는 비가역이므로 재평가 대신 충돌 스캔으로 인시던트가 생성됩니다.<br>참고: 이 시스템에서 “적재”는 <b>SharePoint 업로드 = RAG·Viva 동시 업로드</b>를 의미하며 <b>분리가 불가능</b>합니다. 그래서 라이선스가 사내 열람·AI 인덱싱·교육 게시를 전부 커버해야만 적재됩니다 — 부분 커버 계약의 문서는 보류에 남습니다.</div>'+
+   '<div class="usebox">'+
+    useRow("commercial","상업적 이용","자료를 상업적 산출물·대외 서비스에 활용")+
+    useRow("redistribute","재배포","사내 시스템 밖으로 자료를 재배포")+
+   '</div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("clock",14)+' 업로드 대기 시간 <span class="hint-back">취소 가능한 유일한 구간</span></div>'+
+   '<div class="setgrp-d">승인·자동 적재분은 이 시간 동안 업로드 대기열에 머물며, <b>이 구간에서만 취소할 수 있습니다.</b> 업로드 후에는 회수가 불가능합니다.</div>'+
+   '<div class="rule"><select style="max-width:220px" onchange="setDelay(this.value)">'+delayOpts.map(o=>'<option value="'+o[0]+'"'+(S.uploadDelaySec===o[0]?" selected":"")+'>'+o[1]+'</option>').join("")+'</select></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("shield-check",14)+' AI 신뢰도 임계값</div>'+
+   '<div class="setgrp-d">이 값 미만의 판정은 레벨과 무관하게 사람 검토로 회부됩니다.</div>'+
+   '<div class="thres"><input type="range" min="50" max="95" step="5" value="'+S.confidenceThreshold+'" oninput="document.getElementById(\'thv\').textContent=this.value+\'%\'" onchange="setThreshold(this.value)" /><b id="thv">'+S.confidenceThreshold+'%</b></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("folder",14)+' 폴더 매칭 신뢰도 임계값 (R15)</div>'+
+   '<div class="setgrp-d">폴더 배치는 업로드 후 사실상 비가역입니다. 임계 미만이면 대기가 끝나도 <b>자동 업로드가 보류</b>되고, 체크리스트에서 사람이 폴더를 확인해야 확정할 수 있습니다.</div>'+
+   '<div class="thres"><input type="range" min="50" max="95" step="5" value="'+S.folderThreshold+'" oninput="document.getElementById(\'fthv\').textContent=this.value+\'%\'" onchange="setFolderThreshold(this.value)" /><b id="fthv">'+S.folderThreshold+'%</b></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("bell-ring",14)+' 알림 채널</div>'+
+   '<div class="setgrp-d">라이선스 만료(D-30·D-7)와 이상 감지(수집 급감·확보 실패율 급증) 알림의 수신처입니다.</div>'+
+   '<div class="rule"><input style="max-width:280px" value="'+esc(S.notify.email)+'" onchange="DB.settings.notify.email=this.value;audit(\'—\',\'정책 변경: 알림 수신처\',\'관리자\',this.value);toastMsg(\'알림 수신처 저장\')" placeholder="알림 이메일" /></div>'+
+   '<div class="userow"><div class="ut"><b>만료 D-30 알림</b><span>갱신 협상 착수 신호</span></div><button class="sw'+(S.notify.d30?" on":"")+'" onclick="DB.settings.notify.d30=!DB.settings.notify.d30;renderModal()" aria-label="D-30"></button></div>'+
+   '<div class="userow"><div class="ut"><b>만료 D-7 알림</b><span>잔존 조항 없는 계약은 심각도 상향</span></div><button class="sw'+(S.notify.d7?" on":"")+'" onclick="DB.settings.notify.d7=!DB.settings.notify.d7;renderModal()" aria-label="D-7"></button></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("scale",14)+' 레벨별 행동</div>'+
+   '<div class="setgrp-d">L1·L2는 보수 모드(검토 강등)를 선택할 수 있고, L3~L5의 행동은 안전상 고정입니다.</div>'+
+   lvRow(1,'<select onchange="setLvAction(1,this.value)"><option value="auto"'+(S.levelActions[1]==="auto"?" selected":"")+'>자동 적재 경로</option><option value="review"'+(S.levelActions[1]==="review"?" selected":"")+'>검토로 강등 (보수)</option></select>')+
+   lvRow(2,'<select onchange="setLvAction(2,this.value)"><option value="conditional"'+(S.levelActions[2]==="conditional"?" selected":"")+'>용도 대조 후 적재</option><option value="review"'+(S.levelActions[2]==="review"?" selected":"")+'>검토로 강등 (보수)</option></select>')+
+   lvRow(3,'<span class="fixed">'+ic("lock",12)+'고정 — 사람 검토</span>')+
+   lvRow(4,'<span class="fixed">'+ic("lock",12)+'고정 — 차단 + 문의처 생성</span>')+
+   lvRow(5,'<span class="fixed">'+ic("lock",12)+'고정 — 수집 자체 차단</span>')+
+  '</div>';
+}
+function setDelay(v){DB.settings.uploadDelaySec=parseInt(v,10);
+  audit("—","정책 변경: 업로드 대기 시간 "+delayLabel(),"관리자","이후 대기열 진입분부터 적용");
+  toastMsg("대기 시간 적용 — "+delayLabel());renderModal();}
+function toggleUsage(key){
+  const cur=DB.settings.usage[key],label=key==="commercial"?"상업적 이용":"재배포";
+  policyPreview("이용 목적 변경 — "+label+" "+(cur?"OFF":"ON")+" 미리보기",
+   function(){DB.settings.usage[key]=!cur;},
+   function(){DB.settings.usage[key]=!cur;
+    audit("—","정책 변경: "+label+" "+(cur?"OFF":"ON"),"관리자","이용 목적 변경");
+    const n=reEvaluateAll("시스템(정책)","이용 목적 변경 재평가");
+    toastMsg("재평가 완료 — 미결 "+n+"건 변경 · 업로드분은 충돌 스캔");render();renderModal();},
+   "이미 업로드된 문서는 <b>회수되지 않으며</b>, 새 기준과 충돌하면 인시던트로 등록되어 수동 조치 대상이 됩니다.");
+}
+function setFolderThreshold(v){v=parseInt(v,10);
+  const cur=DB.settings.folderThreshold;
+  const held=DB.docs.filter(d=>d.state==="staged"&&(d.folderConf||100)<v&&(d.folderConf||100)>=cur).length;
+  const released=DB.docs.filter(d=>d.state==="staged"&&(d.folderConf||100)>=v&&(d.folderConf||100)<cur).length;
+  const apply=function(){DB.settings.folderThreshold=v;
+    audit("—","정책 변경: 폴더 신뢰도 임계 "+v+"%","관리자","미만이면 자동 업로드 보류 (R15)");
+    DB.docs.forEach(d=>{if(d.state==="staged")d.folderHoldLogged=false;});
+    toastMsg("폴더 임계 "+v+"% 적용");render();renderModal();};
+  if(!held&&!released){apply();return;}
+  confirmDlg("폴더 신뢰도 임계 "+v+"% — 변경 미리보기",
+   (held?"대기 중 <b>"+held+"건</b>이 새로 <b>자동 업로드 보류</b>됩니다 — 사람이 폴더를 확인해야 확정할 수 있습니다.<br>":"")+
+   (released?'<b style="color:var(--risk)">보류되던 '+released+'건</b>이 임계를 충족해 <b>대기 만료 시 자동 업로드(비가역)</b>됩니다.<br>':"")+
+   "<br>계속할까요?",apply,function(){if(settingsOpen)renderModal();});
+}
+function setThreshold(v){v=parseInt(v,10);
+  policyPreview("신뢰도 임계값 "+v+"% — 변경 미리보기",
+   function(){DB.settings.confidenceThreshold=v;},
+   function(){DB.settings.confidenceThreshold=v;
+    audit("—","정책 변경: 신뢰도 임계값 "+v+"%","관리자","");
+    const n=reEvaluateAll("시스템(정책)","임계값 변경 재평가");
+    toastMsg("임계값 "+v+"% 적용 — 미결 "+n+"건 변경");render();renderModal();});
+}
+function setLvAction(lv,v){
+  policyPreview("L"+lv+" 행동 변경 — 미리보기",
+   function(){DB.settings.levelActions[lv]=v;},
+   function(){DB.settings.levelActions[lv]=v;
+    audit("—","정책 변경: L"+lv+" 행동 → "+(v==="review"?"검토 강등":"기본"),"관리자","");
+    const n=reEvaluateAll("시스템(정책)","레벨 행동 변경 재평가");
+    toastMsg("적용 — 미결 "+n+"건 변경");render();renderModal();});
+}
+/* 저작권 표기 규칙 — 키워드는 카탈로그 항목에 '연결'만 한다. 레벨·용도는 카탈로그가 보유. */
+function licRulesHTML(){
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("book-key",14)+' 저작권 표기 탐지 키워드 <span class="hint-back">표준 카탈로그 v2026.07 — 서비스 업데이트로 관리</span></div>'+
+   '<div class="setgrp-d">시스템이 문서·약관에서 찾는 표기 단어들입니다. <b>기본</b> 키워드와 항목별 레벨·용도 판정은 표준 카탈로그로 제공되며 <b>서비스가 관리·업데이트</b>합니다 — 더 엄격해지는 변경은 자동 반영되고, 느슨해지는 변경은 법무 확정 후에만 반영됩니다. 조직 고유의 문구(계약서 상투어, 사내 표기 관행 등)는 항목별로 <b>직접 추가</b>할 수 있습니다. 키워드는 항목에 연결만 하며, 레벨을 직접 정하지 않습니다.</div>'+
+   '</div>'+
+   [1,2,3,4,5].map(lv=>{
+    const items=CATALOG.filter(c=>c.lv===lv);if(!items.length)return"";
+    return '<div class="setgrp lvgroup"><div class="lvgroup-h">'+lvBadge(lv)+'<span class="lvd">'+esc(LV_META[lv].desc)+' — '+esc(LV_META[lv].act)+'</span><span class="lvcnt">'+items.length+'개 항목</span></div>'+
+    items.map(c=>{
+     const users=(DB.settings.licKeywords||[]).map((r,gi)=>({r,gi})).filter(x=>x.r.cat===c.id);
+     return '<div class="catcard">'+
+      '<div class="catcard-h"><b>'+esc(c.id)+'</b><span class="catcard-n">'+esc(c.name)+'</span>'+
+      '<span class="tpill" title="표준 카탈로그 항목 — 레벨·용도 판정은 서비스 업데이트로 관리되며, 조직에서는 키워드 추가와 법무 확정만 가능합니다">'+ic("lock",9)+'표준</span>'+
+      (c.lv<=2?'<span class="sig warn" title="이 항목의 키워드는 자동 적재 경로에 영향을 줍니다">'+ic("alert-triangle",10)+'자동 경로</span>':'')+'</div>'+
+      (c.aliases&&c.aliases.length?'<div class="chipline">'+c.aliases.map(a=>'<span class="sig def" title="기본 제공 — 삭제 불가"><b class="defkw">기본</b> '+esc(a)+'</span>').join("")+
+        users.map(x=>'<span class="sig user" title="사용자 추가">'+esc(x.r.kw)+' <a onclick="delLicKw('+x.gi+')" style="cursor:pointer;font-weight:800;color:var(--risk)" aria-label="삭제">×</a></span>').join("")+'</div>'
+       :'<div style="font-size:12px;color:var(--t3)">탐지 키워드 없음 — 표기의 <b>부재</b> 자체가 이 항목의 신호입니다 (보호가 기본값)</div>')+
+      (c.aliases&&c.aliases.length?'<div class="rule" style="margin-top:7px"><input id="lkw-'+esc(c.id)+'" placeholder="이 항목으로 인식할 키워드 추가 — 예: 조직 고유 표기 문구" onkeydown="if(event.key===\'Enter\')addLicKw(\''+esc(c.id)+'\')" /><button class="miniadd" onclick="addLicKw(\''+esc(c.id)+'\')">'+ic("plus",12)+'추가</button></div>':'')+
+     '</div>';
+    }).join("")+'</div>';
+   }).join("")+
+   '<div class="rcard-btns" style="margin-top:6px"><button class="btn primary sm" onclick="saveLicRules()">'+ic("check",13)+'저장 — 미결 문서 재평가</button></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("scale",14)+' 이 키워드가 하는 일 / 하지 않는 일</div>'+
+   '<div class="setgrp-d">하는 일: 표기 문자열 인식(표준 표기 사전 확장) · 사람이 확정한 조직 고유 표기를 자산으로 축적.<br>하지 않는 일: 레벨 부여, 용도 판정, 이미 적재된 문서 변경 — 그건 각각 카탈로그·법무 확정·사후 조치의 몫입니다. 변경 이력은 감사 로그에 남습니다.</div></div>';
+}
+function addLicKw(cat){
+  const el=document.getElementById("lkw-"+cat);if(!el)return;
+  const v=el.value.trim();if(!v)return;
+  DB.settings.licKeywords.push({kw:v,cat});
+  audit("—","표기 키워드 추가: "+cat,"관리자","“"+v+"”");renderModal();
+}
+function delLicKw(i){
+  const r=DB.settings.licKeywords[i];if(!r)return;
+  DB.settings.licKeywords.splice(i,1);
+  audit("—","표기 키워드 삭제: "+r.cat,"관리자","“"+r.kw+"”");renderModal();
+}
+function saveLicRules(){
+  DB.settings.licKeywords=DB.settings.licKeywords.filter(r=>(r.kw||"").trim());
+  audit("—","설정 변경: 저작권 표기 규칙 "+DB.settings.licKeywords.length+"건","관리자","키워드 → 카탈로그 매핑");
+  const n=reEvaluateAll("시스템(표기 규칙)","표기 규칙 변경 재평가");
+  toastMsg("저장 — 미결 "+n+"건 재평가");render();renderModal();
+}
+function sourcesHTML(){
+  const S=DB.settings;
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("bot",14)+' 조직 도메인 설명 — 관련성 판정의 기준</div>'+
+   '<div class="setgrp-d">AI가 “우리 조직과 관련 있는 자료인지”를 판단할 때 이 문장을 기준으로 삼습니다. 여기 적힌 범위 밖의 수집물은 무관으로 걸러집니다.</div>'+
+   '<div class="fld"><textarea style="min-height:56px" onchange="DB.settings.domainDesc=this.value;audit(\'—\',\'설정 변경: 도메인 설명\',\'관리자\',\'관련성 판정 기준 갱신\');toastMsg(\'도메인 설명 저장 — 다음 수집부터 반영\')">'+esc(S.domainDesc)+'</textarea></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("scan-text",14)+' 수집 키워드</div>'+
+   '<div class="setgrp-d">AI가 검색어를 넓혀갈 때 기준으로 삼는 키워드입니다. 쉼표로 구분.</div>'+
+   '<div class="rule"><input value="'+esc(S.keywords.join(", "))+'" onchange="DB.settings.keywords=this.value.split(\',\').map(s=>s.trim()).filter(Boolean);audit(\'—\',\'설정 변경: 수집 키워드 \'+DB.settings.keywords.length+\'개\',\'관리자\',\'\');toastMsg(\'키워드 저장\')" placeholder="히트펌프, 냉매, …" /></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("radio",14)+' 수집 소스</div>'+
+   '<div class="setgrp-d">여기 등록된 소스에서 수집이 시작됩니다. 차단 도메인은 L5(접근통제) 필터로도 쓰입니다.</div>'+
+   DB.settings.sources.map((s,i)=>'<div class="srcrow"><div class="s-mid"><div class="s-name">'+esc(s.name)+'</div>'+
+    '<div class="s-meta"><span class="conn-kind">'+esc(s.kind)+'</span>'+(s.url?'<span title="'+esc(s.url)+'" style="display:inline-flex;align-items:center;gap:3px">'+ic("link",10)+esc(s.url.replace(/^https?:\/\//i,"").split("/")[0])+'</span> · ':'')+(s.type?esc(s.type)+' · ':'')+esc(s.schedule)+(s.auth?' · '+ic("key",10)+' '+esc(s.auth):'')+
+    (s.backfill&&s.backfill!=="none"?' · <span class="tpill">소급 '+esc(BACKFILL_LABEL[s.backfill]||s.backfill)+'</span>':'')+srcLicChip(s)+'</div></div>'+
+    '<button class="sw'+(s.on?" on":"")+'" onclick="toggleSrc('+i+')" aria-label="'+esc(s.name)+'"></button></div>').join("")+
+   '<button class="miniadd" onclick="openSrcForm()">'+ic("plus",13)+'소스 추가</button></div>';
+}
+function toggleSrc(i){const s=DB.settings.sources[i];s.on=!s.on;
+  audit("—","소스 "+(s.on?"가동":"중지")+": "+s.name,"관리자","");renderModal();render();}
+function routingHTML(){
+  const cats=DB.settings.classifyRules.map(r=>r.cat).filter((c,i,a)=>a.indexOf(c)===i);
+  const sample=DB.docs.find(d=>d.state==="uploaded")||DB.docs[0];
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("layers",14)+' 분류 규칙 — 어떤 내용이면 어떤 분류로</div>'+
+   '<div class="setgrp-d">AI가 문서를 분류할 때 이 규칙을 기준으로 삼습니다. 위에서부터 먼저 맞는 규칙이 적용됩니다.</div>'+
+   DB.settings.classifyRules.map((r,i)=>{const last=!(r.kw||"").trim();
+    return '<div class="rule"><input value="'+esc(r.kw)+'" onchange="DB.settings.classifyRules['+i+'].kw=this.value" placeholder="'+(last?"키워드 없음 → 기타로 분류":"키워드, 키워드…")+'"'+(last?" disabled":"")+' />'+
+     '<span style="color:var(--t3)">'+ic("arrow-right",12)+'</span>'+
+     '<input style="max-width:130px" value="'+esc(r.cat)+'" onchange="DB.settings.classifyRules['+i+'].cat=this.value;renderModal()" />'+
+     (last?'':'<button class="del" onclick="DB.settings.classifyRules.splice('+i+',1);renderModal()" aria-label="삭제">'+ic("trash-2",14)+'</button>')+'</div>';}).join("")+
+   '<button class="miniadd" onclick="DB.settings.classifyRules.splice(DB.settings.classifyRules.length-1,0,{kw:\'\',cat:\'새 분류\'});renderModal()">'+ic("plus",13)+'규칙 추가</button></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("file-text",14)+' 파일명 규칙 — 컬럼 없는 SharePoint의 메타데이터 운반체</div>'+
+   '<div class="setgrp-d">SharePoint에 컬럼을 기록할 수 없으므로, 파일명에 <b>사람이 읽는 제목 + 불변 포인터 코드</b>를 넣습니다. 코드(문서 ID·레벨·라이선스 ID)로 권리 원장·업로드 원장을 역추적합니다. 만료일 같은 가변 정보는 넣지 않습니다 — 파일명은 업로드 후 바꿀 수 없어 거짓말을 하게 되기 때문입니다.</div>'+
+   '<div class="userow"><div class="ut"><b>자동 파일명 변환</b><span>업로드 시점에 규칙 적용 · SharePoint 금지 문자 자동 제거</span></div>'+
+    '<button class="sw'+(DB.settings.naming?" on":"")+'" onclick="DB.settings.naming=!DB.settings.naming;renderModal()" aria-label="파일명 규칙"></button></div>'+
+   '<div class="fn" style="margin-top:2px">'+ic("arrow-right",10)+' 미리보기: '+esc(fileNameFor(sample))+'</div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("database",14)+' 분류 → 폴더 연결 — SharePoint·RAG·Viva 공통 트리</div>'+
+   '<div class="setgrp-d">SharePoint를 원본 저장소로 하여 <b>RAG 컬렉션과 Viva Learning 카테고리가 동일한 트리로 미러</b>됩니다. 배포된 트리는 사실상 비가역이므로 <b>폴더는 추가만 가능</b>하고 삭제·개명은 지원하지 않습니다.</div>'+
+   cats.map(cat=>'<div class="rule"><span style="min-width:110px;font-size:12px;font-weight:700">'+esc(cat)+'</span>'+
+    '<span style="color:var(--t3)">'+ic("arrow-right",12)+'</span>'+
+    '<select style="flex:1" onchange="DB.settings.catMap[\''+esc(cat)+'\']=this.value">'+DB.settings.folders.map(f=>'<option'+((DB.settings.catMap[cat]||"")===f?" selected":"")+'>'+esc(f)+'</option>').join("")+'</select></div>').join("")+
+   '<div class="rule" style="margin-top:4px"><input id="fld-new" placeholder="새 폴더 — 예: HVAC > 신제품 동향 (추가만 가능)" onkeydown="if(event.key===\'Enter\')addFolder()" /><button class="miniadd" onclick="addFolder()">'+ic("plus",12)+'폴더 추가</button></div>'+
+   '<div class="mirror" style="margin-top:6px">'+DB.settings.folders.map(f=>{const p=f.replace(/\s*>\s*/g,"/");
+     return '<div class="mir-row"><b>'+esc(f)+'</b><span class="mir-sys">/SharePoint/'+esc(p)+'/ · rag://kb/'+esc(p)+' · viva://'+esc(p)+'</span></div>';}).join("")+'</div></div>';
+}
+/* 연동 — LLM 게이트웨이(B9)·Graph 커넥터(F31) 설정. RAG·Viva는 설정 대상이 아님(동시 전파). */
+function connHTML(){
+  const C=DB.settings.conn;
+  return '<div class="setgrp"><div class="setgrp-t">'+ic("bot",14)+' AI 모델 연동 (LLM API)</div>'+
+   '<div class="setgrp-d">키는 화면에서 마스킹되어 표시되며 안전하게 별도 보관됩니다.</div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">Provider</span><select style="max-width:200px" onchange="DB.settings.conn.llm.provider=this.value"><option'+(C.llm.provider==="Anthropic"?" selected":"")+'>Anthropic</option><option'+(C.llm.provider==="Azure OpenAI"?" selected":"")+'>Azure OpenAI</option></select></div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">Model</span><input style="max-width:260px" value="'+esc(C.llm.model)+'" onchange="DB.settings.conn.llm.model=this.value;audit(\'—\',\'연동 변경: LLM 모델\',\'관리자\',this.value);toastMsg(\'모델 저장\')" /></div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">API Key</span><input type="password" style="max-width:260px" value="'+esc(C.llm.key)+'" onchange="DB.settings.conn.llm.key=this.value;audit(\'—\',\'연동 변경: LLM API 키 교체\',\'관리자\',\'키 값은 기록하지 않음\');toastMsg(\'키 저장 — 안전한 별도 저장소에 보관\')" /></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("database",14)+' SharePoint 연동 (Microsoft Graph)</div>'+
+   '<div class="setgrp-d">서비스 계정 권한은 <b>쓰기 + 폴더 생성만</b> — 삭제·개명 권한은 부여 자체를 하지 않습니다(비가역 안전판).</div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">사이트 URL</span><input value="'+esc(C.sp.site)+'" onchange="DB.settings.conn.sp.site=this.value;audit(\'—\',\'연동 변경: SP 사이트\',\'관리자\',this.value);toastMsg(\'저장\')" /></div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">라이브러리</span><input style="max-width:200px" value="'+esc(C.sp.library)+'" onchange="DB.settings.conn.sp.library=this.value;toastMsg(\'저장\')" /></div>'+
+   '<div class="rule"><span style="min-width:80px;font-size:12px;font-weight:700">서비스 계정</span><input style="max-width:280px" value="'+esc(C.sp.account)+'" onchange="DB.settings.conn.sp.account=this.value;toastMsg(\'저장\')" /><span class="sig">'+ic("lock",10)+'쓰기+폴더 생성만</span></div></div>'+
+  '<div class="setgrp"><div class="setgrp-t">'+ic("layers",14)+' RAG·Viva — 별도 설정이 없는 이유</div>'+
+   '<div class="setgrp-d">RAG·Viva는 SharePoint 업로드 순간 <b>자동 전파(분리 불가)</b>되므로 별도 엔드포인트·키가 존재하지 않습니다. 여기 입력칸이 없는 것 자체가 이 시스템의 아키텍처입니다.</div>'+
+   '<div class="mirror">'+
+    '<div class="mir-row"><b>사내 AI RAG</b><span class="mir-sys">SP 전파 자동 — 설정 없음 (읽기 전용)</span></div>'+
+    '<div class="mir-row"><b>Viva Learning</b><span class="mir-sys">SP 전파 자동 — 설정 없음 (읽기 전용)</span></div></div></div>';
+}
+function addFolder(){
+  const v=val("fld-new");if(!v)return;
+  if(DB.settings.folders.indexOf(v)>=0){toastMsg("이미 있는 폴더입니다");return;}
+  DB.settings.folders.push(v);
+  audit("—","폴더 추가: "+v,"관리자","SharePoint·RAG·Viva 3계 동시 생성 (append-only)");
+  toastMsg("폴더 추가 — 3개 시스템에 동시 생성됩니다");renderModal();
+}
+/* ═════════════════════════════════════════════════════════════════
+   7) 동기화 데모 + 유예 카운트다운 틱
+      [BACKEND] 실제로는 큐 기반 워커가 단계별 상태를 갱신하고 UI는 폴링/스트림 구독
+   ═════════════════════════════════════════════════════════════════ */
+const SYNC_STAGES=["수집","분류·요약·자기검증","검증·레벨 판정"];
+const SYNC_POOL=[
+ {type:"기술문서",title:"히트펌프 냉매 R-454B 취급·안전 지침",source:"제조사 기술포털(공개)",url:"https://vendor.example/tech/r454b",lic:"공개 · 출처표기 조건",lv:2,cond:["attribution"],conf:89,
+  summary:"저GWP 냉매 R-454B의 충전·회수 절차와 가연성 등급(A2L) 대응 안전 수칙을 정리한 기술 지침이다.",
+  evidence:["§3 충전 절차","§5 A2L 안전 수칙"],signals:[["라이선스 표기","출처표기 조건부 공개"],["페이월","없음"]],
+  fileHint:{ext:"pdf",size:"2.6MB"},
+  snapExc:"본 기술 지침은 출처 표기를 조건으로 자유롭게 활용 가능합니다. R-454B는 A2L 등급 미연성 냉매로서…",snapMark:"출처 표기를 조건으로",aud:["설비기술팀"]},
+ {type:"리포트",title:"유럽 EPBD 건물 에너지 성능 지침 개정 해설",source:"EU 정책 컨설팅 브리프",url:"https://policy.example/epbd-2026",lic:"표기 없음 · 조건 불명",lv:3,conf:66,
+  summary:"EPBD 개정에 따른 신축·리모델링 건물의 난방 시스템 요건 변화와 히트펌프 전환 인센티브를 해설한다.",
+  evidence:["p.3 요건 비교표"],signals:[["라이선스 표기","없음"],["표기 명확성","낮음"],["페이월","없음"]],
+  snapExc:"This policy brief summarises the recast EPBD requirements… (재사용 조건 문구 없음)",snapMark:"",aud:["전략기획팀"],contact:"info@policy.example"}
+];
+let syncIdx=0;
+function startSync(){
+  if(syncing)return;
+  if(syncIdx>=SYNC_POOL.length){toastMsg("데모 풀의 신규 문서를 모두 수집했습니다");return;}
+  syncing=true;
+  const d=makeDoc(SYNC_POOL[syncIdx++]);d.time=nowHM();d.state="pipeline";d.stage=SYNC_STAGES[0];
+  DB.docs.unshift(d);audit(d.title,"수집 시작","AI 엔진","소스: "+d.source);
+  activeView="log";logFilter="all";render();
+  let i=0;
+  const bar=()=>{const b=document.getElementById("syncbar"),m=document.getElementById("syncmsg");
+    if(b)b.style.width=Math.round(((i+1)/(SYNC_STAGES.length+1))*100)+"%";
+    if(m)m.textContent="“"+d.title.slice(0,20)+"…” — "+(d.stage||"판정")+" 단계 처리 중";};
+  bar();
+  const timer=setInterval(()=>{
+    i++;
+    if(i<SYNC_STAGES.length){d.stage=SYNC_STAGES[i];
+      audit(d.title,SYNC_STAGES[i-1]+" 완료 → "+SYNC_STAGES[i],"AI 엔진",i===2?("신뢰도 "+d.conf+"% · "+LV_META[d.lv].short+" 판정"):"");
+      render();bar();return;}
+    clearInterval(timer);
+    d.stage=null;
+    d.history.push({t:d.time,from:"—",to:"수집·분류·요약 완료",by:"AI 엔진",note:"신뢰도 "+d.conf+"% · "+LV_META[d.lv].short+" 판정"});
+    const ev=evaluate(d);
+    syncing=false;
+    if(ev.route==="uploaded"){
+      audit(d.title,"검증 → 적재 자격 확정","AI 엔진",ev.why);
+      beginFetch(d,"AI 엔진",ev,"동기화 자동 경로");
+      toastMsg("신규 1건 — 원본 확보 후 업로드 대기로 이동합니다");
+    }else{
+      d.appliedLic=ev.lic||null;d.evalWhy=ev.why;d.rules=ev.rules||[];d.state=ev.route;
+      d.history.push({t:d.time,from:"검증",to:ROUTE_META[ev.route].label,by:"AI 엔진",note:ev.why});
+      audit(d.title,"검증 → "+ROUTE_META[ev.route].label,"AI 엔진",ev.why);
+      toastMsg("신규 1건 처리 완료 — "+ROUTE_META[ev.route].label+" 처리됨");
+    }
+    render();
+  },850);
+}
+/* 유예 카운트다운 틱 — 만료 시 자동 업로드(비가역 확정) */
+setInterval(function(){
+  let uploaded=false;
+  DB.docs.forEach(d=>{if(d.state==="staged"&&Date.now()>=d.stagedUntil){
+    if((d.folderConf||100)<DB.settings.folderThreshold){
+      if(!d.folderHoldLogged){d.folderHoldLogged=true;audit(d.title,"자동 업로드 보류 — 폴더 확인 필요","시스템(R15)","폴더 신뢰도 "+d.folderConf+"% < 임계 "+DB.settings.folderThreshold+"% — 사람 확인 후 수동 확정만 가능");}
+      return;}
+    doUpload(d,"시스템(대기 만료)");uploaded=true;}});
+  if(uploaded){toastMsg("대기 종료 — 자동 업로드 확정 (비가역) · RAG·Viva 배포");render();}
+  else if(activeView==="staging"&&DB.docs.some(d=>d.state==="staged"))renderView();
+  else if(activeView==="log"&&DB.docs.some(d=>d.state==="staged"))renderView();
+},1000);
+
+/* 초기 렌더 */
+render();
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){if(dialog)closeDlg();else if(settingsOpen)closeSettings();return;}
+  /* 검토 대기 키보드 퀵 액션 — 다이얼로그·입력 중에는 비활성 */
+  if(dialog||settingsOpen)return;
+  const tag=((e.target&&e.target.tagName)||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select")return;
+  if(activeView!=="queue")return;
+  const cards=Array.prototype.slice.call(document.querySelectorAll('#view .rcard[data-id]'));
+  if(!cards.length)return;
+  const k=e.key.toLowerCase();
+  if(k==="j"||k==="k"){
+    kbdIdx=Math.max(0,Math.min(cards.length-1,(kbdIdx<0?-1:kbdIdx)+(k==="j"?1:-1)));
+    cards.forEach((c,i)=>c.classList.toggle("kbd-sel",i===kbdIdx));
+    if(cards[kbdIdx].scrollIntoView)cards[kbdIdx].scrollIntoView({block:"nearest",behavior:"smooth"});
+    e.preventDefault();
+  }else if(kbdIdx>=0&&cards[kbdIdx]){
+    const id=cards[kbdIdx].getAttribute("data-id");
+    if(k==="a")openDecision(id,"approve");
+    else if(k==="r")openDecision(id,"reject");
+    else if(k==="h")holdDoc(id);
+    else if(k==="enter"||k==="o")openDetail(id);
+  }
+});
+</script>
+</body>
+</html>
