@@ -1,5 +1,5 @@
 {
-  "name": "navien-knowledge-agent",
+  "name": "ai365-knowledge-agent",
   "private": true,
   "scripts": {
     "test": "node tests/flowtest4.js && node tests/flowtest5.js && node tests/flowtest6.js"

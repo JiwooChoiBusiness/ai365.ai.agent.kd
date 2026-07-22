@@ -12,3 +12,6 @@ CLAUDE.md
 Thumbs.db
 .DS_Store
 *.log
+
+# 에이전트 지침 (로컬 전용)
+AGENTS.md

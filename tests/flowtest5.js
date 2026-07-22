@@ -11,7 +11,7 @@ await sleep(120);
 E("openSettings()");
 let m=w.document.getElementById("modalroot").innerHTML;
 ok(m.indexOf("폴더 매칭 신뢰도 임계값")>=0,"policy: folder threshold");
-ok(m.indexOf("알림 채널")>=0&&m.indexOf("kb-admin@navien.co.kr")>=0,"policy: notify");
+ok(m.indexOf("알림 채널")>=0&&m.indexOf("kb-admin@ai365.example")>=0,"policy: notify");
 E("switchMTab('sources')");
 m=w.document.getElementById("modalroot").innerHTML;
 ok(m.indexOf("조직 도메인 설명")>=0&&m.indexOf("관련성 판정")>=0,"sources: domain desc");

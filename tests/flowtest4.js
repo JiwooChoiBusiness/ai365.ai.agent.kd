@@ -71,7 +71,7 @@ ok(E("DB.docs.filter(d=>d.appliedLic==='LIC-001'&&d.state==='uploaded').length")
 const sid=E("DB.docs.find(d=>d.state==='staged').id");
 E(`openUploadConfirm('${sid}')`);E("dialog.ack=true");E("confirmUpload()");
 ok(E(`DB.docs.find(d=>d.id==='${sid}').state`)==="uploaded","checklist upload");
-ok(E(`DB.docs.find(d=>d.id==='${sid}').spName`).indexOf("[KD-")>=0,"filename pointer");
+ok(E(`DB.docs.find(d=>d.id==='${sid}').spName`).indexOf("[AI365-")>=0,"filename pointer");
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);
 })().catch(e=>{console.error("ERROR:",e.stack);process.exit(1)});

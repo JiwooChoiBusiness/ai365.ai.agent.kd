@@ -1,4 +1,4 @@
-# NAVIEN AI AGENT — 지식 수집·적재 에이전트 (데모)
+# Ai 365 AI AGENT — 지식 수집·적재 에이전트 (데모)
 
 [![tests](https://github.com/MCB-Ai365/ai365.ai.agent.kd/actions/workflows/test.yml/badge.svg)](https://github.com/MCB-Ai365/ai365.ai.agent.kd/actions/workflows/test.yml)
 
